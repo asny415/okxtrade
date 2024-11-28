@@ -1,8 +1,19 @@
-export function add(a: number, b: number): number {
-  return a + b;
-}
+import * as download from "./commands/download.ts";
+import * as backtesting from "./commands/backtesting.ts";
+import { getLog } from "./common/func.ts";
+import { parse } from "./common/args.ts";
 
-// Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
+const log = getLog("main");
+
 if (import.meta.main) {
-  console.log("Add 2 + 3 =", add(2, 3));
+  const cmd = Deno.args[0];
+  if (cmd == "download") {
+    parse(download.options);
+    download.run();
+  } else if (cmd == "backtesting") {
+    parse(backtesting.options);
+    backtesting.run();
+  } else {
+    log.error("unknown command", cmd);
+  }
 }
