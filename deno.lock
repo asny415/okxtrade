@@ -49,6 +49,10 @@
       "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
     }
   },
+  "remote": {
+    "https://deno.land/x/momentjs@2.29.1-deno/mod.ts": "f0c8542988b812d2aeaabe4fe3d86e7638ba6dd469ac9dd252eb2d9a765b8b49",
+    "https://deno.land/x/momentjs@2.29.1-deno/node_modules/moment/moment.js": "7ba0da6b25146fe95a948b47ec8a7707b4bcf6a87390d4b655a0663e107f7845"
+  },
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1"

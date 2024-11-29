@@ -1,8 +1,7 @@
 import * as path from "jsr:@std/path";
 import { ensureDir } from "jsr:@std/fs/ensure-dir";
-import { getLog } from "../common/func.ts";
+import { getLog, load_candles } from "../common/func.ts";
 import { ParseArgsParam } from "../common/type.ts";
-import { get } from "../api/okx.ts";
 import { args } from "../common/args.ts";
 
 const log = getLog("download");
@@ -32,13 +31,8 @@ export async function run() {
     const df = [];
     let time = te.getTime();
     while (time > ts.getTime()) {
-      log.info("progress", { time, to: ts.getTime() });
-      const data = await get("/api/v5/market/history-candles", {
-        bar: args.t,
-        instId: args.p,
-        after: `${time}`,
-        limit: "300",
-      });
+      log.info("progress", { pair: p, time, to: ts.getTime() });
+      const data = await load_candles(p, args.t, time, 300);
       if (data) {
         for (const r of data) {
           const rt = parseInt(r[0]);
