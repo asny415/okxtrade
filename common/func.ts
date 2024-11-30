@@ -108,13 +108,13 @@ export async function load_dataframes(pair: string, tf: string) {
 export async function load_candles(
   pair: string,
   timeframe: string,
-  offset: number,
+  offset: string,
   limit: number
 ) {
   return await get("/api/v5/market/history-candles", {
     instId: pair,
     bar: timeframe,
-    after: `${offset}`,
+    after: offset,
     limit: `${limit}`,
   });
 }

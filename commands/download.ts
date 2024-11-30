@@ -32,7 +32,7 @@ export async function run() {
     let time = te.getTime();
     while (time > ts.getTime()) {
       log.info("progress", { pair: p, time, to: ts.getTime() });
-      const data = await load_candles(p, args.t, time, 300);
+      const data = await load_candles(p, args.t, `${time}`, 300);
       if (data) {
         for (const r of data) {
           const rt = parseInt(r[0]);

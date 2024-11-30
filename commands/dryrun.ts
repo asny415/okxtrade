@@ -1,10 +1,4 @@
-import {
-  getLog,
-  load_candles,
-  load_dataframes,
-  load_stragegy,
-  trade_left,
-} from "../common/func.ts";
+import { getLog, load_stragegy, trade_left } from "../common/func.ts";
 import { ParseArgsParam } from "../common/type.ts";
 import { args } from "../common/args.ts";
 import {
@@ -17,102 +11,49 @@ import {
   OrderState,
   OrderSide,
 } from "../common/strategy.ts";
+import { okxws } from "../api/okx.ts";
 
-const log = getLog("backtesting");
-export const DOC = "backtesting";
+const log = getLog("dryrun");
+export const DOC = "dryrun";
 export const options: ParseArgsParam = {
-  string: ["timerange", "pair", "strategy", "wallet"],
+  string: ["pair", "strategy", "wallet"],
   default: {
     pair: "TON-USDT",
-    timerange: "20240901-20241125",
     strategy: "hello",
     wallet: "10000",
   },
-  alias: { r: "timerange", p: "pair", s: "strategy", w: "wallet" },
+  alias: { p: "pair", s: "strategy", w: "wallet" },
 };
 
 export async function run() {
   const strategy = await load_stragegy();
-  log.info("start backtesting ...", { strategy: strategy.name });
+  log.info("start dryrun ...", { strategy: strategy.name });
   const pairs = args.p.split(",");
-  const result: Record<string, string> = {};
-  for (const p of pairs) {
-    const dataframes: Record<string, DataFrame[]> = {};
-    for (const tf of strategy.timeframes) {
-      if (!dataframes[tf.timeframe]) {
-        dataframes[tf.timeframe] = await load_dataframes(p, tf.timeframe);
-      }
-    }
-    //按照 5m 1h 这样排序，越精确的时间越排在前面
-    const dfsrc = strategy.timeframes
-      .map((tf) => [...dataframes[tf.timeframe]])
-      .sort((a, b) => b.length - a.length);
-    const dfs: DataFrame[][] = [];
-    for (let idx = 0; idx < dfsrc.length; idx++) {
-      const history = await load_candles(
-        p,
-        strategy.timeframes[idx].timeframe,
-        `${dfsrc[idx][0].ts}`,
-        strategy.timeframes[idx].depth
-      );
-      dfs.push(history);
-    }
-    const init_value = parseFloat(args.w);
-    if (init_value <= 0) {
-      throw new Error("wallet balance not set");
-    }
-    log.info("init balance", init_value);
-    const wallet: Wallet = {
-      pair: p,
-      balance: init_value,
-    };
-    const trades: Trade[] = [];
-    while (dfsrc[0].length > 0) {
-      const nextts = dfsrc[0][0].ts;
-      for (let i = 0; i < dfsrc.length; i++) {
-        while (dfsrc[i][0]?.ts <= nextts) {
-          const df = dfsrc[i].splice(0, 1)[0];
-          dfs[i].push(df);
-          while (dfs[i].length > strategy.timeframes[i].depth) {
-            dfs[i].splice(0, 1);
-          }
-        }
-      }
-      if (dfsrc[0].length > 1) {
-        const nexttick = dfsrc[0][0];
-        const thistick = dfs[0].slice(-1)[0];
-        const delta = nexttick.ts - thistick.ts;
-        const avg = Math.round(delta / 3);
-        await go(strategy, thistick.ts + avg, nexttick.h, wallet, trades, dfs);
-        await go(
-          strategy,
-          thistick.ts + avg * 2,
-          nexttick.l,
-          wallet,
-          trades,
-          dfs
-        );
-        await go(strategy, nexttick.ts, nexttick.c, wallet, trades, dfs);
-      }
-    }
-
-    const current_price = dfs[0].slice(-1)[0].c;
-    const left_total = trades.reduce(
-      (r, t) => (r += t.is_open ? trade_left(t) : 0),
-      0
-    );
-    const last_value = wallet.balance + left_total * current_price;
-    result[wallet.pair] = (
-      ((last_value - init_value) * 100) /
-      init_value
-    ).toFixed(2);
+  if (pairs.length != 1) {
+    throw new Error("only 1 pair allowed");
   }
-  Object.keys(result).forEach((pair) => {
-    log.info("backtesting result:", {
-      pair,
-      roi: result[pair] + "%",
-    });
-  });
+  const pair = pairs[0];
+  const init_value = parseFloat(args.w);
+  if (init_value <= 0) {
+    throw new Error("wallet balance not set");
+  }
+  log.info("init balance", init_value);
+  const wallet: Wallet = {
+    pair,
+    balance: init_value,
+  };
+  const trades: Trade[] = [];
+
+  okxws(
+    pair,
+    strategy.timeframes,
+    (current_time: number, current_price: number, dfs: DataFrame[][]) => {
+      if (args.v) {
+        log.info("tick test", current_time, current_price, dfs);
+      }
+      go(strategy, current_time, current_price, wallet, trades, dfs);
+    }
+  );
 }
 
 export async function go(

@@ -1,5 +1,6 @@
 import * as download from "./commands/download.ts";
 import * as backtesting from "./commands/backtesting.ts";
+import * as dryrun from "./commands/dryrun.ts";
 import { getLog } from "./common/func.ts";
 import { parse } from "./common/args.ts";
 
@@ -13,6 +14,9 @@ if (import.meta.main) {
   } else if (cmd == "backtesting") {
     parse(backtesting.options);
     backtesting.run();
+  } else if (cmd == "dryrun") {
+    parse(dryrun.options);
+    dryrun.run();
   } else {
     log.error("unknown command", cmd);
   }
