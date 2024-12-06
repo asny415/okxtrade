@@ -7,13 +7,12 @@ import { args } from "../common/args.ts";
 
 export const DOC = "webui";
 export const options: ParseArgsParam = {
-  string: ["bot"],
-  alias: { b: "bot" },
+  string: ["robot"],
+  alias: { r: "robot" },
 };
 
 const log = getLog("webui");
 export function run() {
-  if (!args.b) throw new Error("Bot name not specified");
   // 启动服务器
   const port = 8000;
   log.info(`服务器正在运行，监听端口 ${port}`);
