@@ -1,25 +1,133 @@
 <html>
 
 <head>
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.development.js"></script>
 </head>
 
 <body>
+    <div id="chart" style="width: 100%; height: 100%;"></div>
+    <!-- 标题容器 -->
+    <div id="chart-labels" style="
+        position: absolute; 
+        top: 10px; 
+        left: 10px; 
+        font-family: Arial, sans-serif; 
+        z-index: 100;
+        color: #333;">
+        <div id="title" style="font-size: 18px; font-weight: bold;">OKX Trade</div>
+        <div id="subtitle" style="font-size: 14px; font-weight: normal; margin-bottom: 0.5em;">Subtitle or Description
+        </div>
+        <div id="radios"></div>
+    </div>
     <script>
-        const chart = LightweightCharts.createChart(document.body);
-        const lineSeries = chart.addLineSeries();
-        lineSeries.setData([
-            { time: '2019-04-11', value: 80.01 },
-            { time: '2019-04-12', value: 96.63 },
-            { time: '2019-04-13', value: 76.64 },
-            { time: '2019-04-14', value: 81.89 },
-            { time: '2019-04-15', value: 74.43 },
-            { time: '2019-04-16', value: 80.01 },
-            { time: '2019-04-17', value: 96.63 },
-            { time: '2019-04-18', value: 76.64 },
-            { time: '2019-04-19', value: 81.89 },
-            { time: '2019-04-20', value: 74.43 },
-        ]);
+        const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+            timeScale: {
+                // 显示具体时间
+                timeVisible: true,
+            }
+        });
+        window.addEventListener('resize', () => {
+            chart.resize(window.innerWidth, window.innerHeight);
+        });
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderDownColor: '#ef5350',
+            borderUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+            wickUpColor: '#26a69a',
+        });
+        candleSeries.setData([]);
+        const hisSeries = chart.addHistogramSeries({
+            priceFormat: {
+                type: 'volume',
+            },
+            priceScaleId: 'volume',
+        });
+        hisSeries.setData([])
+        chart.priceScale('volume').applyOptions({
+            scaleMargins: {
+                top: 0.8, // 将成交量图表放在底部
+                bottom: 0,
+            },
+        });
+
+        // 设置主价格刻度的位置
+        chart.priceScale('right').applyOptions({
+            scaleMargins: {
+                top: 0.3, // 蜡烛图留出顶部空间
+                bottom: 0.3, // 底部预留给成交量
+            },
+        });
+
+        const buyOrderSeries = chart.addLineSeries({
+            color: 'black', // 点的颜色
+            lineVisible: false,   // 隐藏线条
+            pointMarkersVisible: true, // 显示交互点
+        });
+        buyOrderSeries.setData([])
+        const sellOrderSeries = chart.addLineSeries({
+            color: 'green', // 点的颜色
+            lineVisible: false,   // 隐藏线条
+            pointMarkersVisible: true, // 显示交互点
+        });
+        sellOrderSeries.setData([])
+        async function run() {
+            const rsp = await fetch("/api/update")
+            const data = await rsp.json()
+            console.log(data)
+            document.getElementById('subtitle').innerText = data.robot
+            document.getElementById('radios').innerHTML = `${Object.keys(data.tfs).map(tf => `<input type="radio" id="${tf}" name="tf" value="${tf}"><label for="${tf}">${tf}</label>`).join(' ')}`
+            let tf = Object.keys(data.tfs)[0]
+            document.querySelectorAll('[name=tf]').forEach(n => {
+                n.onchange = (e) => {
+                    tf = e.target.value
+                    updateData()
+                }
+            })
+            function updateData() {
+                const datas = data.tfs[tf].map(r => {
+                    const time = Math.round(r.ts / 1000)
+                    return [
+                        {
+                            time, open: r.o,
+                            close: r.c,
+                            high: r.h,
+                            low: r.l
+                        }, {
+                            time, value: r.vol, color: r.o >= r.c ? '#ef5350' : '#26a69a'
+                        }
+                    ]
+
+                }).sort((a, b) => a[0].time - b[0].time)
+                candleSeries.setData(datas.map(r => r[0]));
+                hisSeries.setData(datas.map(r => r[1]));
+                let buyOrders = [], sellOrders = [];
+                data.trades.forEach(trade => {
+                    trade.orders.forEach((o => {
+                        const otime = Math.round(o.place_at / 1000)
+                        const time = datas.filter(a => a[0].time > otime)[0][0].time
+                        if (o.side == 0) {
+                            buyOrders.push({
+                                time,
+                                value: o.average,
+                            })
+                        } else {
+                            sellOrders.push({
+                                time,
+                                value: o.average,
+                            })
+                        }
+                    }))
+                });
+                buyOrders = buyOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != buyOrders[i - 1].time)
+                sellOrders = sellOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != sellOrders[i - 1].time)
+                buyOrderSeries.setData(buyOrders)
+                sellOrderSeries.setData(sellOrders)
+            }
+            updateData(tf)
+        }
+        run()
     </script>
 </body>
 

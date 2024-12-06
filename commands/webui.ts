@@ -40,7 +40,13 @@ async function handleRequest(request: Request): Promise<Response> {
 
   // 处理API更新请求
   if (url.pathname === "/api/update") {
-    const body = await request.json();
+    let body = { robot: false, after: 0 };
+    try {
+      body = await request.json();
+    } catch (_err) {
+      // ignore json parse error on get
+    }
+
     const robot = url.searchParams.get("robot") || body.robot || args.robot;
     const after = body.after || 0;
     const tfs: Record<string, DataFrame[]> = {};
