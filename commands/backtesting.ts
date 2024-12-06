@@ -1,3 +1,4 @@
+import moment from "https://deno.land/x/momentjs@2.29.1-deno/mod.ts";
 import {
   getLog,
   load_candles,
@@ -17,6 +18,7 @@ import {
   OrderState,
   OrderSide,
 } from "../common/strategy.ts";
+import { persistent_signal, persistent_trades } from "../common/persistent.ts";
 
 const log = getLog("backtesting");
 export const DOC = "backtesting";
@@ -34,6 +36,10 @@ export const options: ParseArgsParam = {
 export async function run() {
   const strategy = await load_stragegy();
   log.info("start backtesting ...", { strategy: strategy.name });
+  const robot = `backtesting-${strategy.name}-${moment().format(
+    "YYYYMMDDHHmmss"
+  )}`;
+  args.robot = robot;
   const pairs = args.p.split(",");
   const result: Record<string, string> = {};
   for (const p of pairs) {
@@ -83,8 +89,17 @@ export async function run() {
         const thistick = dfs[0].slice(-1)[0];
         const delta = nexttick.ts - thistick.ts;
         const avg = Math.round(delta / 3);
-        await go(strategy, thistick.ts + avg, nexttick.h, wallet, trades, dfs);
         await go(
+          robot,
+          strategy,
+          thistick.ts + avg,
+          nexttick.h,
+          wallet,
+          trades,
+          dfs
+        );
+        await go(
+          robot,
           strategy,
           thistick.ts + avg * 2,
           nexttick.l,
@@ -92,7 +107,16 @@ export async function run() {
           trades,
           dfs
         );
-        await go(strategy, nexttick.ts, nexttick.c, wallet, trades, dfs);
+        await go(
+          robot,
+          strategy,
+          nexttick.ts,
+          nexttick.c,
+          wallet,
+          trades,
+          dfs,
+          true
+        );
       }
     }
 
@@ -107,6 +131,7 @@ export async function run() {
       init_value
     ).toFixed(2);
   }
+  log.info("robot name is:", robot);
   Object.keys(result).forEach((pair) => {
     log.info("backtesting result:", {
       pair,
@@ -116,28 +141,43 @@ export async function run() {
 }
 
 export async function go(
+  robot: string,
   strategy: Required<Strategy>,
   current_time: number,
   current_price: number,
   wallet: Wallet,
   trades: Trade[],
-  dfs: DataFrame[][]
+  dfs: DataFrame[][],
+  persistent = false
 ) {
-  const bug_signal = strategy.populate_buy_trend(
+  const buy_signal = strategy.populate_buy_trend(
     current_time,
     current_price,
     wallet,
     trades,
     dfs
   );
-  if (bug_signal) {
-    await go_buy(strategy, bug_signal, current_time, wallet, trades);
+
+  if (persistent) {
+    await persistent_signal(
+      robot,
+      strategy.timeframes.map((tf, idx) => ({
+        name: tf.timeframe,
+        dfs: { ...dfs[idx].slice(-1)[0], ...buy_signal },
+      }))
+    );
+  }
+
+  if (buy_signal.amount) {
+    await go_buy(strategy, buy_signal, current_time, wallet, trades);
+    await persistent_trades(robot, trades);
   }
 
   for (const trade of trades) {
     const sell_signal = check_roi(strategy, current_price, current_time, trade);
-    if (sell_signal) {
+    if (sell_signal.amount) {
       await go_sell(strategy, sell_signal, current_time, wallet, trade);
+      await persistent_trades(robot, trades);
     }
   }
 }
@@ -149,6 +189,8 @@ export function go_buy(
   wallet: Wallet,
   trades: Trade[]
 ) {
+  if (!signal.amount || !signal.price || !signal.tag)
+    throw new Error("bad signal for buy");
   if (wallet.balance < signal.amount * signal.price) {
     throw new Error("not enough balance");
   }
@@ -187,7 +229,7 @@ export function check_roi(
   current_price: number,
   current_time: number,
   trade: Trade
-): Signal | undefined {
+): Signal {
   const left = trade_left(trade);
   if (left > 0) {
     const roi = (current_price - trade.open_rate) / trade.open_rate;
@@ -219,7 +261,7 @@ export function check_roi(
       };
     }
   }
-  return;
+  return {};
 }
 
 export function go_sell(
@@ -229,6 +271,7 @@ export function go_sell(
   wallet: Wallet,
   trade: Trade
 ) {
+  if (!signal.amount || !signal.price) throw new Error("bad signal for sell");
   const order: Order = {
     state: OrderState.full_filled,
     side: OrderSide.sell,

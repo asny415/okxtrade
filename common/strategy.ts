@@ -60,9 +60,9 @@ export interface TimeFrame {
 }
 
 export interface Signal {
-  amount: number;
-  price: number;
-  tag: string;
+  amount?: number;
+  price?: number;
+  tag?: string;
 }
 
 export interface Strategy {
@@ -76,5 +76,5 @@ export interface Strategy {
     wallet: Wallet,
     trades: Trade[],
     dfs: DataFrame[][]
-  ) => Signal | undefined;
+  ) => Signal;
 }

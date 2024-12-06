@@ -4,6 +4,8 @@ import { dirname } from "jsr:@std/path";
 import { ParseArgsParam } from "../common/type.ts";
 import { getLog } from "../common/func.ts";
 import { args } from "../common/args.ts";
+import { list } from "../common/persistent.ts";
+import { DataFrame, Trade } from "../common/strategy.ts";
 
 export const DOC = "webui";
 export const options: ParseArgsParam = {
@@ -38,14 +40,40 @@ async function handleRequest(request: Request): Promise<Response> {
 
   // 处理API更新请求
   if (url.pathname === "/api/update") {
+    const body = await request.json();
+    const robot = url.searchParams.get("robot") || body.robot || args.robot;
+    const after = body.after || 0;
+    const tfs: Record<string, DataFrame[]> = {};
+    {
+      const prefix = ["signal", robot];
+      const entries = list({ prefix });
+      for await (const entry of entries) {
+        const ts = entry.key.slice(-1)[0].toString();
+        const name = entry.key[2].toString();
+        if (parseInt(ts) > after) {
+          if (!tfs[name]) {
+            tfs[name] = [];
+          }
+          tfs[name].push(entry.value as DataFrame);
+        }
+      }
+    }
+
+    const trades: Trade[] = [];
+    {
+      const prefix = ["trade", robot];
+      const entries = list({ prefix });
+      for await (const entry of entries) {
+        const trade = entry.value as Trade;
+        trades.push(trade);
+      }
+    }
+
     const updateData = {
-      timestamp: new Date().toISOString(),
-      status: "success",
-      message: "数据已成功更新",
-      details: {
-        version: "1.0.0",
-        lastUpdated: new Date().toLocaleString(),
-      },
+      robot,
+      after,
+      tfs,
+      trades,
     };
 
     return new Response(JSON.stringify(updateData), {

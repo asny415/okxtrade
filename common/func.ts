@@ -44,7 +44,7 @@ export async function load_stragegy(): Promise<Required<Strategy>> {
   );
   const _strategy = await import(`./${module_path}`);
   const default_strategy: Strategy = {
-    name: "no name",
+    name: "helloworld",
     timeframes: [
       {
         timeframe: "5m",
@@ -59,8 +59,8 @@ export async function load_stragegy(): Promise<Required<Strategy>> {
       _wallet: Wallet,
       _trades: Trade[],
       _dfs: DataFrame[][]
-    ): Signal | undefined {
-      return;
+    ): Signal {
+      return {};
     },
   };
   return Object.assign(default_strategy, _strategy.strategy);

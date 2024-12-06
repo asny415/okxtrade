@@ -2,11 +2,12 @@ import { parseArgs } from "jsr:@std/cli/parse-args";
 import { ParseArgsParam, ParseArgsReturn } from "./type.ts";
 import { mergeOpts } from "./func.ts";
 import { run as webui } from "../commands/webui.ts";
+import * as persistent from "./persistent.ts";
 const common_options: ParseArgsParam = {
   string: ["basedir"],
   boolean: ["verbose", "webui"],
   default: { basedir: "./userdata" },
-  alias: { v: "verbose", b: "basedir", w: "webui" },
+  alias: { v: "verbose", b: "basedir", u: "webui" },
 };
 
 export let args: ParseArgsReturn = { _: [] };
@@ -16,5 +17,6 @@ export function parse(opts: ParseArgsParam) {
   if (args.webui) {
     webui();
   }
+  persistent.init();
   return args;
 }
