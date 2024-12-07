@@ -19,6 +19,17 @@
         </div>
         <div id="radios"></div>
     </div>
+    <div id="tooltip" style="
+        position: absolute;
+        display: none;
+        background: #ffffff;
+        border: 1px solid #ccc;
+        padding: 5px;
+        border-radius: 4px;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 10;">
+    </div>
     <script>
         const chart = LightweightCharts.createChart(document.getElementById('chart'), {
             timeScale: {
@@ -64,12 +75,16 @@
             color: 'black', // 点的颜色
             lineVisible: false,   // 隐藏线条
             pointMarkersVisible: true, // 显示交互点
+            pointMarkersRadius: 1,
+            crosshairMarkerRadius: 1,
         });
         buyOrderSeries.setData([])
         const sellOrderSeries = chart.addLineSeries({
-            color: 'green', // 点的颜色
+            color: 'black', // 点的颜色
             lineVisible: false,   // 隐藏线条
             pointMarkersVisible: true, // 显示交互点
+            pointMarkersRadius: 1,
+            crosshairMarkerRadius: 1,
         });
         sellOrderSeries.setData([])
         async function run() {
@@ -77,7 +92,7 @@
             const data = await rsp.json()
             console.log(data)
             document.getElementById('subtitle').innerText = data.robot
-            document.getElementById('radios').innerHTML = `${Object.keys(data.tfs).map(tf => `<input type="radio" id="${tf}" name="tf" value="${tf}"><label for="${tf}">${tf}</label>`).join(' ')}`
+            document.getElementById('radios').innerHTML = `${Object.keys(data.tfs).map((tf, idx) => `<input type="radio" id="${tf}" ${idx == 0 ? 'checked' : ''} name="tf" value="${tf}"><label for="${tf}">${tf}</label>`).join(' ')}`
             let tf = Object.keys(data.tfs)[0]
             document.querySelectorAll('[name=tf]').forEach(n => {
                 n.onchange = (e) => {
@@ -85,6 +100,7 @@
                     updateData()
                 }
             })
+
             function updateData() {
                 const datas = data.tfs[tf].map(r => {
                     const time = Math.round(r.ts / 1000)
@@ -111,19 +127,58 @@
                             buyOrders.push({
                                 time,
                                 value: o.average,
+                                filled: o.filled,
+                                trade: trade.id
                             })
                         } else {
                             sellOrders.push({
                                 time,
                                 value: o.average,
+                                filled: o.filled,
+                                trade: trade.id
                             })
                         }
                     }))
                 });
-                buyOrders = buyOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != buyOrders[i - 1].time)
-                sellOrders = sellOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != sellOrders[i - 1].time)
-                buyOrderSeries.setData(buyOrders)
-                sellOrderSeries.setData(sellOrders)
+                buyDatas = buyOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != buyOrders[i - 1].time)
+                sellDatas = sellOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != sellOrders[i - 1].time)
+                buyOrderSeries.setData(buyDatas)
+                buyOrderSeries.setMarkers(buyDatas.map(o => ({
+                    time: o.time,
+                    position: 'belowBar', color: 'purple', shape: 'arrowUp', text: 'B'
+                })))
+                sellOrderSeries.setData(sellDatas)
+                sellOrderSeries.setMarkers(sellDatas.map(o => ({
+                    time: o.time,
+                    position: 'aboveBar', color: 'red', shape: 'arrowUp', text: 'S'
+                })))
+                const tooltip = document.getElementById('tooltip');
+                chart.subscribeClick((param) => {
+                    if (!param || !param.point) {
+                        tooltip.style.display = 'none';
+                        return;
+                    }
+
+                    // 获取点击的坐标
+                    const x = param.point.x;
+                    const y = param.point.y;
+
+                    // 找到最近的数据点
+                    const timeAtMouse = chart.timeScale().coordinateToTime(x);
+                    const focusBuys = buyOrders.filter((o) => o.time === timeAtMouse);
+                    const focusSells = sellOrders.filter((o) => o.time === timeAtMouse);
+
+                    if (focusBuys.length || focusSells.length) {
+                        // 显示 Tooltip
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = `${x + 10}px`; // 偏移一点，避免挡住点
+                        tooltip.style.top = `${y}px`;
+                        tooltip.innerHTML = [...focusBuys.map(o => `trade ${o.trade} buy ${o.value.toFixed(3)} ${o.filled.toFixed(3)}`), ...focusSells.map(o => `trade ${o.trade} sell ${o.value.toFixed(3)} ${o.filled.toFixed(3)}`)].join("<br/>");
+                    } else {
+                        // 隐藏 Tooltip
+                        tooltip.style.display = 'none';
+                    }
+                });
             }
             updateData(tf)
         }
