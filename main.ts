@@ -10,16 +10,16 @@ const log = getLog("main");
 if (import.meta.main) {
   const cmd = Deno.args[0];
   if (cmd == "download") {
-    parse(download.options);
+    await parse(download.options);
     download.run();
   } else if (cmd == "backtesting") {
-    parse(backtesting.options);
+    await parse(backtesting.options);
     backtesting.run();
   } else if (cmd == "dryrun") {
-    parse(dryrun.options);
+    await parse(dryrun.options);
     dryrun.run();
   } else if (cmd == "webui") {
-    parse(webui.options);
+    await parse(webui.options);
     webui.run();
   } else {
     log.error("unknown command", cmd);

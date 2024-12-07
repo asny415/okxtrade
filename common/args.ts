@@ -12,11 +12,11 @@ const common_options: ParseArgsParam = {
 
 export let args: ParseArgsReturn = { _: [] };
 
-export function parse(opts: ParseArgsParam) {
+export async function parse(opts: ParseArgsParam) {
   args = parseArgs(Deno.args.slice(1), mergeOpts(common_options, opts));
   if (args.webui) {
     webui();
   }
-  persistent.init();
+  await persistent.init();
   return args;
 }

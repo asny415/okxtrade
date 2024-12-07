@@ -122,7 +122,8 @@
                 data.trades.forEach(trade => {
                     trade.orders.forEach((o => {
                         const otime = Math.round(o.place_at / 1000)
-                        const time = datas.filter(a => a[0].time > otime)[0][0].time
+                        const nearest_datas = datas.filter(a => a[0].time > otime)
+                        const time = nearest_datas.length ? nearest_datas[0][0].time : datas.slice(-1)[0][0].time
                         if (o.side == 0) {
                             buyOrders.push({
                                 time,

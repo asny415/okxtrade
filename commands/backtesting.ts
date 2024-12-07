@@ -69,6 +69,7 @@ export async function run() {
     }
     log.info("init balance", init_value);
     const wallet: Wallet = {
+      robot,
       pair: p,
       balance: init_value,
     };

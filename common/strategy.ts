@@ -1,4 +1,5 @@
 export interface Wallet {
+  robot: string;
   pair: string; // TON-USDT
   balance: number; // 10000.0
 }

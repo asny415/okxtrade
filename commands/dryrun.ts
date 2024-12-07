@@ -12,6 +12,12 @@ import {
   OrderSide,
 } from "../common/strategy.ts";
 import { okxws } from "../api/okx.ts";
+import {
+  db,
+  list,
+  persistent_signal,
+  persistent_trades,
+} from "../common/persistent.ts";
 
 const log = getLog("dryrun");
 export const DOC = "dryrun";
@@ -25,24 +31,57 @@ export const options: ParseArgsParam = {
   alias: { p: "pair", s: "strategy", w: "wallet" },
 };
 
+export async function init_wallet(robot: string, pair: string) {
+  const init_value = parseFloat(args.w);
+  const wallet: Wallet = {
+    robot,
+    pair,
+    balance: init_value,
+  };
+  const entry = await db.get(["wallet", robot]);
+  if (entry) {
+    const value = entry.value as number;
+    if (value || value === 0) {
+      wallet.balance = value;
+    }
+  } else {
+    if (init_value <= 0) {
+      throw new Error("wallet balance not set");
+    }
+    await persistent_wallet(wallet);
+  }
+  log.info("init balance", wallet.balance);
+  return wallet;
+}
+
+export async function persistent_wallet(wallet: {
+  robot: string;
+  balance: number;
+}) {
+  await db.set(["wallet", wallet.robot], wallet.balance);
+}
+
+export async function init_trades(robot: string): Promise<Trade[]> {
+  const trades: Trade[] = [];
+  const entries = list({ prefix: ["trade", robot] });
+  for await (const entry of entries) {
+    trades.push(entry.value as Trade);
+  }
+  return trades;
+}
+
 export async function run() {
   const strategy = await load_stragegy();
   log.info("start dryrun ...", { strategy: strategy.name });
+  const robot = `dryrun-${strategy.name}`;
+  args.robot = robot;
   const pairs = args.p.split(",");
   if (pairs.length != 1) {
     throw new Error("only 1 pair allowed");
   }
   const pair = pairs[0];
-  const init_value = parseFloat(args.w);
-  if (init_value <= 0) {
-    throw new Error("wallet balance not set");
-  }
-  log.info("init balance", init_value);
-  const wallet: Wallet = {
-    pair,
-    balance: init_value,
-  };
-  const trades: Trade[] = [];
+  const wallet = await init_wallet(robot, pair);
+  const trades = await init_trades(robot);
 
   okxws(
     pair,
@@ -51,35 +90,59 @@ export async function run() {
       if (args.v) {
         log.info("tick test", current_time, current_price, dfs);
       }
-      go(strategy, current_time, current_price, wallet, trades, dfs);
+      go(
+        robot,
+        strategy,
+        current_time,
+        current_price,
+        wallet,
+        trades,
+        dfs,
+        true
+      );
     }
   );
 }
 
 export async function go(
+  robot: string,
   strategy: Required<Strategy>,
   current_time: number,
   current_price: number,
   wallet: Wallet,
   trades: Trade[],
-  dfs: DataFrame[][]
+  dfs: DataFrame[][],
+  persistent = false
 ) {
-  const bug_signal = strategy.populate_buy_trend(
+  const buy_signal = strategy.populate_buy_trend(
     current_time,
     current_price,
     wallet,
     trades,
     dfs
   );
-  if (bug_signal) {
-    await go_buy(strategy, bug_signal, current_time, wallet, trades);
+  if (buy_signal.amount) {
+    await go_buy(strategy, buy_signal, current_time, wallet, trades);
+    await persistent_trades(robot, trades);
+    await persistent_wallet(wallet);
   }
 
   for (const trade of trades) {
     const sell_signal = check_roi(strategy, current_price, current_time, trade);
-    if (sell_signal) {
+    if (sell_signal?.amount) {
       await go_sell(strategy, sell_signal, current_time, wallet, trade);
+      await persistent_trades(robot, trades);
+      await persistent_wallet(wallet);
     }
+  }
+  if (persistent) {
+    await persistent_signal(
+      robot,
+      strategy.timeframes.map((tf, idx) => ({
+        name: tf.timeframe,
+        dfs: { ...dfs[idx].slice(-1)[0], ...buy_signal },
+      }))
+    );
   }
 }
 
@@ -130,7 +193,7 @@ export function check_roi(
   current_price: number,
   current_time: number,
   trade: Trade
-): Signal | undefined {
+): Signal {
   const left = trade_left(trade);
   if (left > 0) {
     const roi = (current_price - trade.open_rate) / trade.open_rate;
@@ -162,7 +225,7 @@ export function check_roi(
       };
     }
   }
-  return;
+  return {};
 }
 
 export function go_sell(

@@ -110,35 +110,38 @@ export async function okxws(
       await new Promise((r) => setTimeout(r, 1000));
       continue;
     }
-    last_callback_ts = current_time;
-    for (const tf of timeframes) {
-      if (
-        !history_dataframes[tf.timeframe] ||
-        history_dataframes[tf.timeframe][0] !=
-          current_dataframes[tf.timeframe][0]
-      ) {
-        const ts = current_dataframes[tf.timeframe][0];
-        const list = await load_candles(pair, tf.timeframe, ts, tf.depth);
-        if (args.v) {
-          log.info("reload candles", { pair, tf: tf.timeframe, ts });
+    try {
+      last_callback_ts = current_time;
+      for (const tf of timeframes) {
+        if (
+          !history_dataframes[tf.timeframe] ||
+          history_dataframes[tf.timeframe][0] !=
+            current_dataframes[tf.timeframe][0]
+        ) {
+          const ts = current_dataframes[tf.timeframe][0];
+          const list = await load_candles(pair, tf.timeframe, ts, tf.depth);
+          if (args.v) {
+            log.info("reload candles", { pair, tf: tf.timeframe, ts });
+          }
+          if (list[0][0] == ts) {
+            list.splice(0, 1);
+          }
+          history_dataframes[tf.timeframe] = [
+            ts,
+            list.map((r: string[]) => okx2df(r)),
+          ];
         }
-        if (list[0][0] == ts) {
-          list.splice(0, 1);
-        }
-        history_dataframes[tf.timeframe] = [
-          ts,
-          list.map((r: string[]) => okx2df(r)),
-        ];
       }
+      await callback(
+        current_time,
+        current_price,
+        timeframes.map((tf) => [
+          current_dataframes[tf.timeframe][1],
+          ...history_dataframes[tf.timeframe][1],
+        ])
+      );
+    } catch (err) {
+      log.error("unexpected error", { err });
     }
-
-    await callback(
-      current_time,
-      current_price,
-      timeframes.map((tf) => [
-        current_dataframes[tf.timeframe][1],
-        ...history_dataframes[tf.timeframe][1],
-      ])
-    );
   }
 }
