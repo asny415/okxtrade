@@ -187,7 +187,7 @@ export async function update_order_status(
           trade.is_open = trade_left(trade) > MIN_SELL;
           await persistent_trades(robot, [trade]);
           notify(
-            `订单最终状态: trade:${trade.id} order:${order.id}, state:${order.state} filled:${order.filled}`
+            `okxtrade: 订单确定: trade:${trade.id} order:${order.id}, state:${order.state} filled:${order.filled}`
           );
         }
       }
