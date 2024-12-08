@@ -216,6 +216,7 @@ export async function go(
   const there_is_no_open_order = check_trades_stable(trades);
 
   if (there_is_no_open_order) {
+    log.debug2("check buy signal");
     asset_goods_match(wallet, trades);
     const buy_signal = strategy.populate_buy_trend(
       current_time,
@@ -224,6 +225,7 @@ export async function go(
       trades,
       dfs
     );
+    log.debug2("check buy signal", buy_signal);
     await persistent_signal(
       robot,
       strategy.timeframes.map((tf, idx) => ({
@@ -232,21 +234,26 @@ export async function go(
       }))
     );
     if (buy_signal.amount && !DRY_RUN) {
+      log.debug2("buy signal, do buy", buy_signal);
       await go_buy(strategy, buy_signal, current_time, wallet, trades);
       await persistent_trades(robot, trades);
     } else if (buy_signal.amount) {
-      log.info("ignore buy since dryrun", buy_signal);
+      log.debug2("ignore buy since dryrun", buy_signal);
     }
+  } else {
+    log.debug2("skip buy signal check");
   }
 
   for (const trade of trades) {
     if (!check_trade_stable(trade)) continue;
     const sell_signal = check_roi(strategy, current_price, current_time, trade);
+    log.debug2("check sell signal for trade", { trade: trade.id, sell_signal });
     if (sell_signal.amount && !DRY_RUN) {
+      log.debug2("sell signal, do sell", sell_signal);
       await go_sell(strategy, sell_signal, current_time, wallet, trade);
       await persistent_trades(robot, trades);
     } else if (sell_signal.amount) {
-      log.info("ignore sell since dryrun", sell_signal);
+      log.debug2("ignore sell since dryrun", sell_signal);
     }
   }
   ping();
