@@ -72,6 +72,7 @@ export async function run() {
       robot,
       pair: p,
       balance: init_value,
+      goods: 0,
     };
     const trades: Trade[] = [];
     while (dfsrc[0].length > 0) {
@@ -196,6 +197,7 @@ export function go_buy(
     throw new Error("not enough balance");
   }
   const order: Order = {
+    id: new Date().getTime().toString(),
     state: OrderState.full_filled,
     side: OrderSide.buy,
     price: signal.price,
@@ -204,7 +206,7 @@ export function go_buy(
     filled: signal.amount,
     fee: 0,
     place_at: current_time,
-    last_fill_at: current_time,
+    update_at: current_time,
   };
   const trade: Trade = {
     id: `${trades.length + 1}`,
@@ -274,6 +276,7 @@ export function go_sell(
 ) {
   if (!signal.amount || !signal.price) throw new Error("bad signal for sell");
   const order: Order = {
+    id: new Date().getTime().toString(),
     state: OrderState.full_filled,
     side: OrderSide.sell,
     price: signal.price,
@@ -282,7 +285,7 @@ export function go_sell(
     filled: signal.amount,
     fee: 0,
     place_at: current_time,
-    last_fill_at: current_time,
+    update_at: current_time,
   };
   log.info("sell order", {
     trade: trade.id,

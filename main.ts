@@ -1,6 +1,7 @@
 import * as download from "./commands/download.ts";
 import * as backtesting from "./commands/backtesting.ts";
 import * as dryrun from "./commands/dryrun.ts";
+import * as trade from "./commands/trade.ts";
 import * as webui from "./commands/webui.ts";
 import { getLog } from "./common/func.ts";
 import { parse } from "./common/args.ts";
@@ -18,6 +19,9 @@ if (import.meta.main) {
   } else if (cmd == "dryrun") {
     await parse(dryrun.options);
     dryrun.run();
+  } else if (cmd == "trade") {
+    await parse(trade.options);
+    trade.run();
   } else if (cmd == "webui") {
     await parse(webui.options);
     webui.run();

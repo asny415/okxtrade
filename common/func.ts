@@ -9,13 +9,29 @@ import {
   Strategy,
   Wallet,
   Trade,
-  OrderState,
   OrderSide,
 } from "./strategy.ts";
 import { get } from "../api/okx.ts";
 
 export function getLog(_name: string) {
-  return new Logger();
+  class Debugable extends Logger {
+    async debug(...arg: unknown[]) {
+      if (args.verbose) {
+        return await this.info(...arg);
+      }
+    }
+    async debug2(...arg: unknown[]) {
+      if (args.verbose > 1) {
+        return await this.info(...arg);
+      }
+    }
+    async debug3(...arg: unknown[]) {
+      if (args.verbose > 2) {
+        return await this.info(...arg);
+      }
+    }
+  }
+  return new Debugable();
 }
 
 export function mergeOpts(a: ParseArgsParam, b: ParseArgsParam) {
@@ -120,13 +136,8 @@ export async function load_candles(
 }
 
 export function trade_left(trade: Trade) {
-  for (const o of trade.orders) {
-    if (o.state !== OrderState.full_filled && o.state !== OrderState.canceled) {
-      throw new Error("order in not stable state");
-    }
-  }
   return trade.orders.reduce(
-    (r, o) => (r -= o.side == OrderSide.sell ? o.filled : 0),
-    trade.amount
+    (r, o) => (r += o.side == OrderSide.sell ? -o.filled : o.filled + o.fee),
+    0
   );
 }

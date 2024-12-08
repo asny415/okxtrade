@@ -4,6 +4,79 @@ import { DataFrame } from "../common/strategy.ts";
 import { TimeFrame } from "../common/strategy.ts";
 
 const log = getLog("api");
+
+export async function sha256(data: string): Promise<string> {
+  const key = Deno.env.get("OKX_SECRET");
+  // 将密钥和数据转换为 Uint8Array
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(key);
+  const dataData = encoder.encode(data);
+
+  // 使用 Web Crypto API 创建 HMAC-SHA256 哈希
+  const hmac = await crypto.subtle.importKey(
+    "raw", // 密钥类型
+    keyData, // 密钥数据
+    { name: "HMAC", hash: { name: "SHA-256" } }, // 使用 SHA-256 算法
+    false, // 密钥是否可导出
+    ["sign"] // 使用密钥进行签名
+  );
+
+  // 计算 HMAC 哈希
+  const hashBuffer = await crypto.subtle.sign("HMAC", hmac, dataData);
+
+  // 将结果转换为 Base64 字符串
+  const hashArray = new Uint8Array(hashBuffer);
+  return btoa(String.fromCharCode(...hashArray));
+}
+
+export async function get2(entry: string, params: Record<string, string>) {
+  const query = (Object.keys(params) as [string])
+    .map((key) => `${key}=${encodeURIComponent(params[key])}`)
+    .join("&");
+  const fullpath = `${entry}?${query}`;
+  const ts = new Date().toISOString();
+  const sign = await sha256(`${ts}GET${fullpath}`);
+  const headers = {
+    "Content-Type": "application/json",
+    "OK-ACCESS-KEY": Deno.env.get("OKX_ACCESSKEY") || "",
+    "OK-ACCESS-TIMESTAMP": ts,
+    "OK-ACCESS-PASSPHRASE": Deno.env.get("OKX_PASSPHRASE") || "",
+    "OK-ACCESS-SIGN": sign,
+  };
+  const rsp = await fetch(`https://www.okx.com${fullpath}`, {
+    headers,
+  });
+  log.debug2("api request", { fullpath });
+  const json = await rsp.json();
+  if (json.code != "0") {
+    log.error(`api error`, { json, fullpath });
+  }
+  return json.data;
+}
+
+export async function post2(entry: string, body: Record<string, string>) {
+  const ts = new Date().toISOString();
+  const sign = await sha256(`${ts}POST${entry}${JSON.stringify(body)}`);
+  const headers = {
+    "Content-Type": "application/json",
+    "OK-ACCESS-KEY": Deno.env.get("OKX_ACCESSKEY") || "",
+    "OK-ACCESS-TIMESTAMP": ts,
+    "OK-ACCESS-PASSPHRASE": Deno.env.get("OKX_PASSPHRASE") || "",
+    "OK-ACCESS-SIGN": sign,
+  };
+  const rsp = await fetch(`https://www.okx.com${entry}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  log.debug2("api request", { entry });
+  const json = await rsp.json();
+  if (json.code != "0") {
+    log.error(`api error`, { json, entry });
+  }
+  return json.data;
+}
+
 export async function get(entry: string, params: Record<string, string>) {
   const query = (Object.keys(params) as [string])
     .map((key) => `${key}=${encodeURIComponent(params[key])}`)
@@ -14,9 +87,7 @@ export async function get(entry: string, params: Record<string, string>) {
       "Content-Type": "application/json",
     },
   });
-  if (args.v) {
-    log.info("api request", { fullpath });
-  }
+  log.debug2("api request", { fullpath });
   const json = await rsp.json();
   if (json.code != "0") {
     log.error(`api error`, { json, fullpath });
@@ -70,7 +141,7 @@ function keep_ws(
 export async function okxws(
   pair: string,
   timeframes: TimeFrame[],
-  callback: (ct: number, cp: number, dfs: DataFrame[][]) => undefined
+  callback: (ct: number, cp: number, dfs: DataFrame[][]) => Promise<void>
 ) {
   let current_time: number = 0;
   let current_price: number = 0;

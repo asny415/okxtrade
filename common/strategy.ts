@@ -2,6 +2,7 @@ export interface Wallet {
   robot: string;
   pair: string; // TON-USDT
   balance: number; // 10000.0
+  goods: number;
 }
 
 export enum OrderState {
@@ -17,6 +18,7 @@ export enum OrderSide {
 }
 
 export interface Order {
+  id: string;
   state: OrderState;
   side: OrderSide;
   price: number; // place price: 3 USDT
@@ -25,8 +27,7 @@ export interface Order {
   filled: number; // 0.5 TON
   fee: number;
   place_at: number; // timestamp when order placed
-  last_fill_at?: number; //timestamp when last fill
-  cancel_at?: number; // timestamp when cancel if canceld
+  update_at?: number; // timestamp when cancel if canceld
 }
 
 export interface Trade {
