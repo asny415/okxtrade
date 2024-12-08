@@ -20,6 +20,7 @@ import {
   persistent_trades,
 } from "../common/persistent.ts";
 import { notify } from "../plugin/telegram.ts";
+import { ping } from "../plugin/health_ping.ts";
 
 const log = getLog("dryrun");
 const MIN_SELL = 0.001;
@@ -248,6 +249,7 @@ export async function go(
       log.info("ignore sell since dryrun", sell_signal);
     }
   }
+  ping();
 }
 
 export async function go_buy(
