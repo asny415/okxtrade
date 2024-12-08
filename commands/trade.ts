@@ -19,11 +19,12 @@ import {
   persistent_signal,
   persistent_trades,
 } from "../common/persistent.ts";
+import { notify } from "../plugin/telegram.ts";
 
 const log = getLog("dryrun");
 const MIN_SELL = 0.001;
-const DRY_RUN = false;
-export const DOC = "dryrun";
+const DRY_RUN = true;
+export const DOC = "trade";
 export const options: ParseArgsParam = {
   string: ["pair", "strategy"],
   alias: { p: "pair", s: "strategy" },
@@ -154,6 +155,7 @@ export function check_trades_stable(trades: Trade[]) {
 }
 
 export async function update_order_status(
+  robot: string,
   current_time: number,
   trades: Trade[]
 ) {
@@ -180,6 +182,13 @@ export async function update_order_status(
           state: order.state,
           amount: order.amount,
         });
+        if (check_order_stable(order)) {
+          trade.is_open = trade_left(trade) > MIN_SELL;
+          await persistent_trades(robot, [trade]);
+          notify(
+            `订单最终状态: trade:${trade.id} order:${order.id}, state:${order.state} filled:${order.filled}`
+          );
+        }
       }
       if (!check_order_stable(order) && current_time - order.place_at > 30000) {
         // order timeout at 30 secs
@@ -202,7 +211,7 @@ export async function go(
   trades: Trade[],
   dfs: DataFrame[][]
 ) {
-  await update_order_status(current_time, trades);
+  await update_order_status(robot, current_time, trades);
   const there_is_no_open_order = check_trades_stable(trades);
 
   if (there_is_no_open_order) {
@@ -286,6 +295,11 @@ export async function go_buy(
     orders: [order],
   };
   trades.push(trade);
+  notify(
+    `okxtrade 下买单: trade:${trade.id} order:${
+      order.id
+    } amount:${order.amount.toFixed(3)} price:${order.price.toFixed(3)}`
+  );
   log.info("buy order", {
     trade: trade.id,
     price: order.price,
@@ -381,5 +395,9 @@ export async function go_sell(
     tag: signal.tag,
   });
   trade.orders.push(order);
-  trade.is_open = trade_left(trade) > MIN_SELL;
+  notify(
+    `okxtrade 下卖单: trade:${trade.id} order:${
+      order.id
+    } amount:${order.amount.toFixed(3)} price:${order.price.toFixed(3)}`
+  );
 }

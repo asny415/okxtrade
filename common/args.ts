@@ -5,7 +5,7 @@ import { run as webui } from "../commands/webui.ts";
 import * as persistent from "./persistent.ts";
 const common_options: ParseArgsParam = {
   string: ["basedir", "verbose"],
-  boolean: ["webui"],
+  boolean: ["webui", "telegram"],
   default: { basedir: "./userdata", verbose: "1" },
   alias: { v: "verbose", b: "basedir", u: "webui" },
 };
