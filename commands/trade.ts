@@ -22,6 +22,7 @@ import {
 
 const log = getLog("dryrun");
 const MIN_SELL = 0.001;
+const DRY_RUN = false;
 export const DOC = "dryrun";
 export const options: ParseArgsParam = {
   string: ["pair", "strategy"],
@@ -90,7 +91,7 @@ export async function run() {
   const env_path = path.join(args.basedir, ".env");
   await dotenv.load({ envPath: env_path, export: true });
   const strategy = await load_stragegy();
-  log.info("start trade ...", { strategy: strategy.name });
+  log.info("start trade ...", { strategy: strategy.name, dryrun: DRY_RUN });
   const robot = `trade-${strategy.name}`;
   args.robot = robot;
   const pairs = args.p.split(",");
@@ -171,9 +172,14 @@ export async function update_order_status(
           order.state = OrderState.part_filled;
         }
         order.average = parseFloat(data[0].avgPx);
-        order.filled = parseFloat(data[0].fillSz);
+        order.filled = parseFloat(data[0].accFillSz);
         order.update_at = parseInt(data[0].uTime);
         order.fee = parseFloat(data[0].fee);
+        log.debug2("订单当前状态", {
+          order: order.id,
+          state: order.state,
+          amount: order.amount,
+        });
       }
       if (!check_order_stable(order) && current_time - order.place_at > 30000) {
         // order timeout at 30 secs
@@ -215,18 +221,22 @@ export async function go(
         dfs: { ...dfs[idx].slice(-1)[0], ...buy_signal },
       }))
     );
-    if (buy_signal.amount) {
+    if (buy_signal.amount && !DRY_RUN) {
       await go_buy(strategy, buy_signal, current_time, wallet, trades);
       await persistent_trades(robot, trades);
+    } else if (buy_signal.amount) {
+      log.info("ignore buy since dryrun", buy_signal);
     }
   }
 
   for (const trade of trades) {
     if (!check_trade_stable(trade)) continue;
     const sell_signal = check_roi(strategy, current_price, current_time, trade);
-    if (sell_signal.amount) {
+    if (sell_signal.amount && !DRY_RUN) {
       await go_sell(strategy, sell_signal, current_time, wallet, trade);
       await persistent_trades(robot, trades);
+    } else if (sell_signal.amount) {
+      log.info("ignore sell since dryrun", sell_signal);
     }
   }
 }
@@ -306,6 +316,14 @@ export function check_roi(
         }
       }
     }
+    log.debug2("check roi for open trade", {
+      trade: trade.id,
+      left,
+      roi,
+      expected: roi_expected,
+      current_price,
+      open_rate: trade.open_rate,
+    });
     if (roi >= (roi_expected as number)) {
       return {
         amount: left,
@@ -338,7 +356,7 @@ export async function go_sell(
     instId: wallet.pair,
     ordType: "limit",
     side: "sell",
-    sz: `${signal.amount}`,
+    sz: `${signal.amount.toFixed(5)}`,
     tdMode: "cash",
     tgtCcy: "base_ccy",
     px: `${signal.price}`,
