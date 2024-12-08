@@ -24,7 +24,7 @@ import { ping } from "../plugin/health_ping.ts";
 
 const log = getLog("dryrun");
 const MIN_SELL = 0.001;
-const DRY_RUN = true;
+const DRY_RUN = false;
 export const DOC = "trade";
 export const options: ParseArgsParam = {
   string: ["pair", "strategy"],
