@@ -1,7 +1,7 @@
 import * as dotenv from "jsr:@std/dotenv";
 import * as path from "jsr:@std/path";
 import { getLog, load_stragegy, trade_left } from "../common/func.ts";
-import { ParseArgsParam } from "../common/type.ts";
+import { Docable, ParseArgsParam } from "../common/type.ts";
 import { args } from "../common/args.ts";
 import {
   DataFrame,
@@ -25,10 +25,14 @@ import { ping } from "../plugin/health_ping.ts";
 const log = getLog("dryrun");
 const MIN_SELL = 0.001;
 const DRY_RUN = false;
-export const DOC = "trade";
-export const options: ParseArgsParam = {
+export const DOC = "perform live quantitative trading with a real wallet";
+export const options: ParseArgsParam & Docable = {
   string: ["pair", "strategy"],
   alias: { p: "pair", s: "strategy" },
+  doc: {
+    pair: "the currency pairs to be retrieved, separated by commas",
+    strategy: "the strategy to be used",
+  },
 };
 
 export async function init_trades(robot: string): Promise<Trade[]> {

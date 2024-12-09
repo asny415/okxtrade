@@ -1,16 +1,20 @@
 import { serveFile } from "jsr:@std/http/file-server";
 import { join, fromFileUrl } from "jsr:@std/path";
 import { dirname } from "jsr:@std/path";
-import { ParseArgsParam } from "../common/type.ts";
+import { Docable, ParseArgsParam } from "../common/type.ts";
 import { getLog } from "../common/func.ts";
 import { args } from "../common/args.ts";
 import { list } from "../common/persistent.ts";
 import { DataFrame, Trade } from "../common/strategy.ts";
 
-export const DOC = "webui";
-export const options: ParseArgsParam = {
+export const DOC =
+  "view the historical process of a specific execution in a graphical interface";
+export const options: ParseArgsParam & Docable = {
   string: ["robot"],
   alias: { r: "robot" },
+  doc: {
+    robot: "the default robot name for the chart",
+  },
 };
 
 const log = getLog("webui");

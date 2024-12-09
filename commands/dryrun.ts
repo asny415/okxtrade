@@ -1,5 +1,5 @@
 import { getLog, load_stragegy, trade_left } from "../common/func.ts";
-import { ParseArgsParam } from "../common/type.ts";
+import { Docable, ParseArgsParam } from "../common/type.ts";
 import { args } from "../common/args.ts";
 import {
   DataFrame,
@@ -20,8 +20,9 @@ import {
 } from "../common/persistent.ts";
 
 const log = getLog("dryrun");
-export const DOC = "dryrun";
-export const options: ParseArgsParam = {
+export const DOC =
+  "validate a strategy with real-time live data using a simulated wallet";
+export const options: ParseArgsParam & Docable = {
   string: ["pair", "strategy", "wallet"],
   default: {
     pair: "TON-USDT",
@@ -29,6 +30,11 @@ export const options: ParseArgsParam = {
     wallet: "10000",
   },
   alias: { p: "pair", s: "strategy", w: "wallet" },
+  doc: {
+    pair: "the currency pairs to be retrieved, separated by commas",
+    strategy: "the strategy to be used",
+    wallet: "the initial amount of the simulated wallet",
+  },
 };
 
 export async function init_wallet(robot: string, pair: string) {

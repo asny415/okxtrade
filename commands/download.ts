@@ -1,12 +1,12 @@
 import * as path from "jsr:@std/path";
 import { ensureDir } from "jsr:@std/fs/ensure-dir";
 import { getLog, load_candles } from "../common/func.ts";
-import { ParseArgsParam } from "../common/type.ts";
+import { Docable, ParseArgsParam } from "../common/type.ts";
 import { args } from "../common/args.ts";
 
 const log = getLog("download");
-export const DOC = "download data for backtesting from okx";
-export const options: ParseArgsParam = {
+export const DOC = "download historical data for backtesting";
+export const options: ParseArgsParam & Docable = {
   string: ["timerange", "pair", "timeframes"],
   default: {
     pair: "TON-USDT",
@@ -14,6 +14,12 @@ export const options: ParseArgsParam = {
     timerange: "20240901-20241125",
   },
   alias: { r: "timerange", t: "timeframes", p: "pair" },
+  doc: {
+    timerange: "the range of data to be retrieved",
+    pair: "the currency pairs to be retrieved, separated by commas",
+    timeframes:
+      "the time intervals for the candlestick charts, separated by commas",
+  },
 };
 
 export async function run() {

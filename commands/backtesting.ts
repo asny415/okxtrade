@@ -21,7 +21,8 @@ import {
 import { persistent_signal, persistent_trades } from "../common/persistent.ts";
 
 const log = getLog("backtesting");
-export const DOC = "backtesting";
+export const DOC =
+  "perform a regression test on a strategy using historical data.";
 export const options: ParseArgsParam = {
   string: ["timerange", "pair", "strategy", "wallet"],
   default: {
