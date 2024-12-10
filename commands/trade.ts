@@ -27,11 +27,14 @@ const MIN_SELL = 0.001;
 const DRY_RUN = false;
 export const DOC = "perform live quantitative trading with a real wallet";
 export const options: ParseArgsParam & Docable = {
-  string: ["pair", "strategy"],
-  alias: { p: "pair", s: "strategy" },
+  string: ["pair", "strategy", "wallet"],
+  alias: { p: "pair", s: "strategy", w: "wallet" },
+  default: { wallet: 900 },
   doc: {
     pair: "the currency pairs to be retrieved, separated by commas",
     strategy: "the strategy to be used",
+    wallet:
+      "init balance, only used for calculating and displaying the profit percentage",
   },
 };
 
@@ -103,7 +106,7 @@ async function extra_notify(msg: string) {
   const total_value_now =
     wallet.balance +
     open_trades.reduce((r, t) => (r += trade_left(t) * current_price), 0);
-  const init_value = 900; //TODO: how to know this?
+  const init_value = parseFloat(args.wallet);
   const earn_rate = ((total_value_now - init_value) * 100) / init_value;
   const money_left_rate = (wallet.balance * 10) / total_value_origin;
   const header = `okxtrade(${total_value_now.toFixed(1)} ${earn_rate.toFixed(
