@@ -35,8 +35,10 @@ export const options: ParseArgsParam & Docable = {
   },
 };
 
-export async function init_trades(robot: string): Promise<Trade[]> {
-  const trades: Trade[] = [];
+export async function init_trades(
+  robot: string,
+  trades: Trade[]
+): Promise<Trade[]> {
   const entries = list({ prefix: ["trade", robot] });
   for await (const entry of entries) {
     trades.push(entry.value as Trade);
@@ -90,6 +92,26 @@ export function asset_goods_match(wallet: { goods: number }, trades: Trade[]) {
   }
 }
 
+const trades: Trade[] = [];
+const wallet: Wallet = { robot: "", pair: "", balance: 0, goods: 0 };
+let current_price: number = 0;
+async function extra_notify(msg: string) {
+  const open_trades = trades.filter((t) => t.is_open);
+  const total_value_origin =
+    wallet.balance +
+    open_trades.reduce((r, t) => (r += trade_left(t) * t.open_rate), 0);
+  const total_value_now =
+    wallet.balance +
+    open_trades.reduce((r, t) => (r += trade_left(t) * current_price), 0);
+  const init_value = 900; //TODO: how to know this?
+  const earn_rate = ((total_value_now - init_value) * 100) / init_value;
+  const money_left_rate = (wallet.balance * 10) / total_value_origin;
+  const header = `okxtrade(${total_value_now.toFixed(1)} ${earn_rate.toFixed(
+    1
+  )}% ${money_left_rate.toFixed(1)}):`;
+  await notify(`${header}\n${msg}`);
+}
+
 export async function run() {
   if (!args.pair || !args.strategy) {
     throw new Error("use --help for how to use");
@@ -105,13 +127,19 @@ export async function run() {
     throw new Error("only 1 pair allowed");
   }
   const pair = pairs[0];
-  const wallet = { robot, pair, balance: 0, goods: 0 };
-  const trades = await init_trades(robot);
+  wallet.robot = robot;
+  wallet.pair = pair;
+  await update_wallet(wallet);
+  await init_trades(robot, trades);
   let last_wallet_update_ts = 0;
   okxws(
     pair,
     strategy.timeframes,
-    async (current_time: number, current_price: number, dfs: DataFrame[][]) => {
+    async (current_time: number, price: number, dfs: DataFrame[][]) => {
+      if (current_price == 0) {
+        extra_notify("程序启动...");
+      }
+      current_price = price;
       log.debug3("tick test", current_time, current_price, dfs);
       if (current_time - last_wallet_update_ts > 10000) {
         await update_wallet(wallet);
@@ -190,8 +218,8 @@ export async function update_order_status(
         if (check_order_stable(order)) {
           trade.is_open = trade_left(trade) > MIN_SELL;
           await persistent_trades(robot, [trade]);
-          notify(
-            `okxtrade: 订单确定: trade:${trade.id} order:${order.id}, state:${order.state} filled:${order.filled}`
+          extra_notify(
+            `订单确定: trade:${trade.id} order:${order.id}, state:${order.state} filled:${order.filled}`
           );
         }
       }
@@ -308,10 +336,10 @@ export async function go_buy(
     orders: [order],
   };
   trades.push(trade);
-  notify(
-    `okxtrade 下买单: trade:${trade.id} order:${
-      order.id
-    } amount:${order.amount.toFixed(3)} price:${order.price.toFixed(3)}`
+  extra_notify(
+    `下买单: trade:${trade.id} order:${order.id} amount:${order.amount.toFixed(
+      3
+    )} price:${order.price.toFixed(3)}`
   );
   log.info("buy order", {
     trade: trade.id,
@@ -408,9 +436,9 @@ export async function go_sell(
     tag: signal.tag,
   });
   trade.orders.push(order);
-  notify(
-    `okxtrade 下卖单: trade:${trade.id} order:${
-      order.id
-    } amount:${order.amount.toFixed(3)} price:${order.price.toFixed(3)}`
+  extra_notify(
+    `下卖单: trade:${trade.id} order:${order.id} amount:${order.amount.toFixed(
+      3
+    )} price:${order.price.toFixed(3)}`
   );
 }
