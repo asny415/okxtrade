@@ -98,6 +98,7 @@ export function asset_goods_match(wallet: { goods: number }, trades: Trade[]) {
 const trades: Trade[] = [];
 const wallet: Wallet = { robot: "", pair: "", balance: 0, goods: 0 };
 let current_price: number = 0;
+let robot = "";
 async function extra_notify(msg: string) {
   await update_wallet(wallet);
   const open_trades = trades.filter((t) => t.is_open);
@@ -110,7 +111,7 @@ async function extra_notify(msg: string) {
   const init_value = parseFloat(args.wallet);
   const earn_rate = ((total_value_now - init_value) * 100) / init_value;
   const money_left_rate = (wallet.balance * 100) / total_value_origin;
-  const header = `okxtrade(${total_value_now.toFixed(1)} ${earn_rate.toFixed(
+  const header = `${robot}(${total_value_now.toFixed(1)} ${earn_rate.toFixed(
     1
   )}% ${money_left_rate.toFixed(0)}%):`;
   await notify(`${header}\n${msg}`);
@@ -124,7 +125,7 @@ export async function run() {
   await dotenv.load({ envPath: env_path, export: true });
   const strategy = await load_stragegy();
   log.info("start trade ...", { strategy: strategy.name, dryrun: DRY_RUN });
-  const robot = `trade-${strategy.name}`;
+  robot = `trade-${strategy.name}`;
   args.robot = robot;
   const pairs = args.p.split(",");
   if (pairs.length != 1) {
