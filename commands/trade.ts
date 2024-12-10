@@ -137,6 +137,7 @@ export async function run() {
     strategy.timeframes,
     async (current_time: number, price: number, dfs: DataFrame[][]) => {
       if (current_price == 0) {
+        current_price = price;
         extra_notify("程序启动...");
       }
       current_price = price;
