@@ -108,12 +108,13 @@ async function extra_notify(msg: string) {
   const total_value_now =
     wallet.balance +
     open_trades.reduce((r, t) => (r += trade_left(t) * current_price), 0);
+  const stable = check_trades_stable(trades);
   const init_value = parseFloat(args.wallet);
   const earn_rate = ((total_value_now - init_value) * 100) / init_value;
   const money_left_rate = (wallet.balance * 100) / total_value_origin;
-  const header = `${robot}(${total_value_now.toFixed(1)} ${earn_rate.toFixed(
+  const header = `${robot}(${stable ? " ~ " : ""}${total_value_now.toFixed(
     1
-  )}% ${money_left_rate.toFixed(0)}%):`;
+  )} ${earn_rate.toFixed(1)}% ${money_left_rate.toFixed(0)}%):`;
   await notify(`${header}\n${msg}`);
 }
 
