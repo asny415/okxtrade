@@ -3,11 +3,9 @@ import { ParseArgsParam } from "./type.ts";
 import { args } from "./args.ts";
 import * as path from "jsr:@std/path";
 import {
-  Signal,
   DataFrame,
   DataFrameState,
   Strategy,
-  Wallet,
   Trade,
   OrderSide,
 } from "./strategy.ts";
@@ -69,15 +67,6 @@ export async function load_stragegy(): Promise<Required<Strategy>> {
     ],
     minimal_roi: 0.01, // 默认超过1%利润卖出
     stoploss: -1, // 默认不设置止损线
-    populate_buy_trend(
-      _current_time: number,
-      _current_price: number,
-      _wallet: Wallet,
-      _trades: Trade[],
-      _dfs: DataFrame[][]
-    ): Signal {
-      return {};
-    },
   };
   return Object.assign(default_strategy, _strategy.strategy);
 }

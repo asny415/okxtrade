@@ -230,8 +230,8 @@ export async function update_order_status(
           );
         }
       }
-      if (!check_order_stable(order) && current_time - order.place_at > 30000) {
-        // order timeout at 30 secs
+      if (!check_order_stable(order) && current_time - order.place_at > 60000) {
+        // order timeout at 60 secs
         await post2("/api/v5/trade/cancel-order", {
           instId: trade.pair,
           ordId: order.id,

@@ -11,10 +11,7 @@ import { trade_left } from "../../common/func.ts";
 // 定投策略，每12小时花费总资金的1/6进行定投，增加1%以后卖出
 export const strategy: Strategy = {
   name: "sip",
-  timeframes: [
-    { timeframe: "5m", depth: 1 },
-    { timeframe: "1H", depth: 1 },
-  ],
+  timeframes: [{ timeframe: "5m", depth: 1 }],
   populate_buy_trend(
     current_time: number,
     current_price: number,

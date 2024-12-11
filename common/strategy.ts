@@ -79,4 +79,11 @@ export interface Strategy {
     trades: Trade[],
     dfs: DataFrame[][]
   ) => Signal;
+  populate_sell_trend?: (
+    current_time: number,
+    current_price: number,
+    wallet: Wallet,
+    trades: Trade[],
+    dfs: DataFrame[][]
+  ) => Signal;
 }
