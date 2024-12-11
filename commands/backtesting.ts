@@ -28,7 +28,7 @@ export const options: ParseArgsParam = {
   default: {
     pair: "TON-USDT",
     timerange: "20240901-20241125",
-    strategy: "hello",
+    strategy: "sip",
     wallet: "10000",
   },
   alias: { r: "timerange", p: "pair", s: "strategy", w: "wallet" },

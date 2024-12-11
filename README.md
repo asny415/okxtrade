@@ -27,7 +27,7 @@ deno run --allow-write --unstable-kv --allow-read --allow-net main.ts download -
 复制并修改自己的投资策略
 
 ```bash
-cp doc/strategy/hello.ts ./userdata/strategy/
+cp doc/strategy/sip.ts ./userdata/strategy/
 ```
 
 执行backtesting
@@ -53,7 +53,7 @@ deno run --allow-write --unstable-kv --allow-read --allow-net main.ts backtestin
 如果你对一切充满信心，可以开始你的量化之旅了，建议一开始使用小资金量测试.
 
 ```bash
-deno run --allow-env --allow-write --unstable-kv --allow-read --allow-net main.ts trade -p TON-USDT -s hello  --webui --verbose=2 --telegram
+deno run --allow-env --allow-write --unstable-kv --allow-read --allow-net main.ts trade -p TON-USDT -s sip  --webui --verbose=2 --telegram
 ```
 
 本项目源自[一个简单的想法](https://t.me/yygqg/25)，感谢[freqtrade](https://www.freqtrade.io/en/stable/)提供灵感.

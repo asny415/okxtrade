@@ -8,9 +8,9 @@ import {
 } from "../../common/strategy.ts";
 import { trade_left } from "../../common/func.ts";
 
-// 购买策略，每12小时定投
+// 定投策略，每12小时花费总资金的1/6进行定投，增加1%以后卖出
 export const strategy: Strategy = {
-  name: "basic",
+  name: "sip",
   timeframes: [
     { timeframe: "5m", depth: 1 },
     { timeframe: "1H", depth: 1 },

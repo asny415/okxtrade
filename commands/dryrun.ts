@@ -26,7 +26,7 @@ export const options: ParseArgsParam & Docable = {
   string: ["pair", "strategy", "wallet"],
   default: {
     pair: "TON-USDT",
-    strategy: "hello",
+    strategy: "sip",
     wallet: "10000",
   },
   alias: { p: "pair", s: "strategy", w: "wallet" },
