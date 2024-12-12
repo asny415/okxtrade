@@ -94,7 +94,7 @@
             data = await rsp.json()
             console.log(data)
             const signalColors = ["#db9023", "#26a8b8", "#eb3f7a"]
-            Object.keys(data.tfs[Object.keys(data.tfs)[0]][0].signal).forEach((key, idx) => {
+            Object.keys(data.tfs[Object.keys(data.tfs)[0]].slice(-1)[0].signal).forEach((key, idx) => {
                 signals[key] = chart.addLineSeries({
                     color: signalColors[idx % signalColors.length],
                 })
@@ -165,7 +165,7 @@
                             low: r.l
                         }, {
                             time, value: r.vol, color: r.o >= r.c ? '#ef5350' : '#26a69a'
-                        }, Object.keys(signals).reduce((r1, s) => { r1[s] = { time, value: r.signal[s] }; return r1; }, {})
+                        }, Object.keys(signals).reduce((r1, s) => { r1[s] = { time, value: r.signal && r.signal[s] }; return r1; }, {})
                     ]
 
                 }).sort((a, b) => a[0].time - b[0].time)

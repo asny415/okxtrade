@@ -158,7 +158,7 @@ export async function go(
       robot,
       strategy.timeframes.map((tf, idx) => ({
         name: tf.timeframe,
-        dfs: { ...dfs[idx].slice(-1)[0], ...buy_signal },
+        dfs: { ...dfs[idx].slice(-1)[0], signal: buy_signal },
       }))
     );
   }
