@@ -1,6 +1,11 @@
 import * as dotenv from "jsr:@std/dotenv";
 import * as path from "jsr:@std/path";
-import { getLog, load_stragegy, trade_left } from "../common/func.ts";
+import {
+  getLog,
+  load_stragegy,
+  trade_left,
+  fileExistsSync,
+} from "../common/func.ts";
 import { Docable, ParseArgsParam } from "../common/type.ts";
 import { args } from "../common/args.ts";
 import {
@@ -126,15 +131,26 @@ export async function run() {
   if (!args.pair || !args.strategy) {
     throw new Error("use --help for how to use");
   }
-  const env_path = path.join(args.basedir, ".env");
-  await dotenv.load({ envPath: env_path, export: true });
   const strategy = await load_stragegy();
-  log.info("start trade ...", { strategy: strategy.name, dryrun: DRY_RUN });
   if (!args.robot) {
     robot = `trade-${strategy.name}`;
     args.robot = robot;
   } else {
     robot = args.robot;
+  }
+  log.info("start trade ...", { strategy: strategy.name, dryrun: DRY_RUN });
+  for (const env_path of [
+    path.join(args.basedir, `.${robot}.env`),
+    path.join(args.basedir, `.${strategy.name}.env`),
+    path.join(args.basedir, ".env"),
+  ]) {
+    if (fileExistsSync(env_path)) {
+      await dotenv.load({ envPath: env_path, export: true });
+      log.info("load env file", { path: env_path });
+      break;
+    } else {
+      log.info("skip env file", { path: env_path });
+    }
   }
   const pairs = args.p.split(",");
   if (pairs.length != 1) {

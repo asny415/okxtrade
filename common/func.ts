@@ -110,6 +110,18 @@ export async function load_dataframes(pair: string, tf: string) {
   return rows;
 }
 
+export function fileExistsSync(filePath: string): boolean {
+  try {
+    Deno.statSync(filePath);
+    return true; // 文件存在
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return false; // 文件不存在
+    }
+    throw error; // 其他错误
+  }
+}
+
 export async function load_candles(
   pair: string,
   timeframe: string,
