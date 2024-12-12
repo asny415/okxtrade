@@ -239,8 +239,12 @@ export async function update_order_status(
           );
         }
       }
-      if (!check_order_stable(order) && current_time - order.place_at > 60000) {
-        // order timeout at 60 secs
+      //买单3分钟超时，卖单1分钟超时
+      const timeout = order.side == OrderSide.buy ? 3 * 60 * 1000 : 60000;
+      if (
+        !check_order_stable(order) &&
+        current_time - order.place_at > timeout
+      ) {
         await post2("/api/v5/trade/cancel-order", {
           instId: trade.pair,
           ordId: order.id,
