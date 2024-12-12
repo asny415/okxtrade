@@ -94,16 +94,20 @@
             data = await rsp.json()
             console.log(data)
             const signalColors = ["#db9023", "#26a8b8", "#eb3f7a"]
+
             Object.keys(data.tfs[Object.keys(data.tfs)[0]].slice(-1)[0].signal).forEach((key, idx) => {
                 signals[key] = chart.addLineSeries({
                     color: signalColors[idx % signalColors.length],
                 })
                 signals[key].setData([])
             })
-
             document.getElementById('subtitle').innerText = data.robot
             document.getElementById('radios').innerHTML = `${Object.keys(data.tfs).map((tf, idx) => `<input type="radio" id="${tf}" ${idx == 0 ? 'checked' : ''} name="tf" value="${tf}"><label for="${tf}">${tf}</label>`).join(' ')}`
             document.getElementById('checks').innerHTML = `${Object.keys(signals).map((key) => `<input type="checkbox" checked class="signal" id="${key}" name="${key}"><label for="${key}">${key}</label>`).join(' ')}`
+            Object.keys(signals).forEach((key, idx) => {
+                document.querySelector(`label[for=${key}]`).style.color = signalColors[idx % signalColors.length]
+            })
+
             let tf = Object.keys(data.tfs)[0]
             document.querySelectorAll('[name=tf]').forEach(n => {
                 n.onchange = (e) => {
@@ -177,8 +181,8 @@
                 data.trades.forEach(trade => {
                     trade.orders.forEach((o => {
                         const otime = Math.round(o.place_at / 1000)
-                        const nearest_datas = datas.filter(a => a[0].time > otime)
-                        const time = nearest_datas.length ? nearest_datas[0][0].time : datas.slice(-1)[0][0].time
+                        const nearest_datas = datas.filter(a => a[0].time <= otime)
+                        const time = nearest_datas.length ? nearest_datas.slice(-1)[0][0].time : datas.slice(-1)[0][0].time
                         if (o.side == 0) {
                             buyOrders.push({
                                 time,
