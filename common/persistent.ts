@@ -2,8 +2,10 @@ import * as path from "jsr:@std/path";
 import { DataFrame, Trade } from "./strategy.ts";
 import { args } from "./args.ts";
 import { ensureDir } from "jsr:@std/fs@1.0.5/ensure-dir";
+import { getLog } from "./func.ts";
 
 export let db: Deno.Kv;
+const log = getLog("persistent");
 
 export async function init() {
   const dbpath = path.join(args.basedir, "db", "data");
@@ -21,6 +23,7 @@ export async function persistent_signal(
     dfs: DataFrame;
   }[]
 ) {
+  log.debug3("persistent_signal", dfs);
   for (const tf of dfs) {
     const path = ["signal", robot, tf.name, tf.dfs.ts];
     const value = { ...tf.dfs };

@@ -94,7 +94,6 @@ export async function run() {
     pair,
     strategy.timeframes,
     async (current_time: number, current_price: number, dfs: DataFrame[][]) => {
-      log.debug("tick test", current_time, current_price, dfs);
       await go(
         robot,
         strategy,
@@ -126,6 +125,7 @@ export async function go(
     trades,
     dfs
   );
+  log.debug3("tick test", current_time, current_price, dfs, buy_signal);
   if (buy_signal.amount) {
     await go_buy(strategy, buy_signal, current_time, wallet, trades);
     await persistent_trades(robot, trades);
@@ -158,7 +158,7 @@ export async function go(
       robot,
       strategy.timeframes.map((tf, idx) => ({
         name: tf.timeframe,
-        dfs: { ...dfs[idx].slice(-1)[0], signal: buy_signal },
+        dfs: { ...dfs[idx][0], signal: buy_signal },
       }))
     );
   }
