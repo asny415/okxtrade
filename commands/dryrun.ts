@@ -174,8 +174,7 @@ export function go_buy(
   wallet: Wallet,
   trades: Trade[]
 ) {
-  if (!signal.amount || !signal.price || !signal.tag)
-    throw new Error("bad signal for buy");
+  if (!signal.amount || !signal.price) throw new Error("bad signal for buy");
   if (wallet.balance < signal.amount * signal.price) {
     throw new Error("not enough balance");
   }
