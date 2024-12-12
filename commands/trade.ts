@@ -149,7 +149,7 @@ export async function run() {
       log.info("load env file", { path: env_path });
       break;
     } else {
-      log.info("skip env file", { path: env_path });
+      log.debug("skip env file", { path: env_path });
     }
   }
   const pairs = args.p.split(",");
