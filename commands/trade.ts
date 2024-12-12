@@ -226,7 +226,7 @@ export async function update_order_status(
           trade.is_open = trade_left(trade) > MIN_SELL;
           await persistent_trades(robot, [trade]);
           extra_notify(
-            `订单确定: trade:${trade.id} order:${order.id}, state:${order.state} filled:${order.filled}`
+            `订单确定: trade:${trade.id} order:${order.id}, state:${order.state} avg:${order.average} filled:${order.filled}`
           );
         }
       }
