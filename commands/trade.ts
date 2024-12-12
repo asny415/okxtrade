@@ -285,14 +285,31 @@ export async function go(
 
   for (const trade of trades) {
     if (!check_trade_stable(trade)) continue;
-    const sell_signal = check_roi(strategy, current_price, current_time, trade);
-    log.debug2("check sell signal for trade", { trade: trade.id, sell_signal });
-    if (sell_signal.amount && !DRY_RUN) {
-      log.debug2("sell signal, do sell", sell_signal);
-      await go_sell(strategy, sell_signal, current_time, wallet, trade);
-      await persistent_trades(robot, trades);
-    } else if (sell_signal.amount) {
-      log.debug2("ignore sell since dryrun", sell_signal);
+    const roi_signal = check_roi(strategy, current_price, current_time, trade);
+    log.debug2("check roi signal for trade", { trade: trade.id, roi_signal });
+    if (roi_signal.amount) {
+      let sell_signal = roi_signal;
+      if (strategy.populate_sell_trend) {
+        sell_signal = strategy.populate_sell_trend(
+          current_time,
+          current_price,
+          wallet,
+          trade,
+          dfs,
+          roi_signal
+        );
+        log.debug2("check sell signal for trade", {
+          trade: trade.id,
+          sell_signal,
+        });
+        if (sell_signal.amount && !DRY_RUN) {
+          log.debug2("sell signal, do sell", sell_signal);
+          await go_sell(strategy, sell_signal, current_time, wallet, trade);
+          await persistent_trades(robot, trades);
+        } else if (sell_signal.amount) {
+          log.debug2("ignore sell since dryrun", sell_signal);
+        }
+      }
     }
   }
   ping();

@@ -135,11 +135,24 @@ export async function go(
   }
 
   for (const trade of trades) {
-    const sell_signal = check_roi(strategy, current_price, current_time, trade);
-    if (sell_signal?.amount) {
-      await go_sell(strategy, sell_signal, current_time, wallet, trade);
-      await persistent_trades(robot, trades);
-      await persistent_wallet(wallet);
+    const roi_signal = check_roi(strategy, current_price, current_time, trade);
+    if (roi_signal.amount) {
+      let sell_signal = roi_signal;
+      if (strategy.populate_sell_trend) {
+        sell_signal = strategy.populate_sell_trend(
+          current_time,
+          current_price,
+          wallet,
+          trade,
+          dfs,
+          roi_signal
+        );
+      }
+      if (sell_signal.amount) {
+        await go_sell(strategy, sell_signal, current_time, wallet, trade);
+        await persistent_trades(robot, trades);
+        await persistent_wallet(wallet);
+      }
     }
   }
   if (persistent) {

@@ -6,7 +6,7 @@ import * as persistent from "./persistent.ts";
 export const common_options: ParseArgsParam & Docable = {
   string: ["basedir", "verbose"],
   boolean: ["webui", "telegram", "help"],
-  default: { basedir: "./userdata", verbose: "1" },
+  default: { basedir: "./userdata", verbose: "0" },
   alias: { v: "verbose", b: "basedir", u: "webui", h: "help" },
   doc: {
     basedir: "specify the directory where all user data is stored",
