@@ -14,7 +14,7 @@ import { get } from "../api/okx.ts";
 export function getLog(_name: string) {
   class Debugable extends Logger {
     async debug(...arg: unknown[]) {
-      if (args.verbose) {
+      if (args.verbose && args.verbose > 0) {
         return await this.info(...arg);
       }
     }

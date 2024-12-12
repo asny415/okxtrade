@@ -191,9 +191,7 @@ export async function okxws(
         ) {
           const ts = current_dataframes[tf.timeframe][0];
           const list = await load_candles(pair, tf.timeframe, ts, tf.depth);
-          if (args.v) {
-            log.info("reload candles", { pair, tf: tf.timeframe, ts });
-          }
+          log.debug("reload candles", { pair, tf: tf.timeframe, ts });
           if (list[0][0] == ts) {
             list.splice(0, 1);
           }

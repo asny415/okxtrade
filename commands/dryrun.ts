@@ -79,9 +79,9 @@ export async function init_trades(robot: string): Promise<Trade[]> {
 
 export async function run() {
   const strategy = await load_stragegy();
-  log.info("start dryrun ...", { strategy: strategy.name });
   const robot = `dryrun-${strategy.name}`;
   args.robot = robot;
+  log.info("start dryrun ...", { strategy: strategy.name, args });
   const pairs = args.p.split(",");
   if (pairs.length != 1) {
     throw new Error("only 1 pair allowed");
@@ -94,9 +94,7 @@ export async function run() {
     pair,
     strategy.timeframes,
     async (current_time: number, current_price: number, dfs: DataFrame[][]) => {
-      if (args.v) {
-        log.info("tick test", current_time, current_price, dfs);
-      }
+      log.debug("tick test", current_time, current_price, dfs);
       await go(
         robot,
         strategy,
