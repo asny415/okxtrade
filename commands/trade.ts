@@ -305,13 +305,13 @@ export async function go(
           trade: trade.id,
           sell_signal,
         });
-        if (sell_signal.amount && !DRY_RUN) {
-          log.debug2("sell signal, do sell", sell_signal);
-          await go_sell(strategy, sell_signal, current_time, wallet, trade);
-          await persistent_trades(robot, trades);
-        } else if (sell_signal.amount) {
-          log.debug2("ignore sell since dryrun", sell_signal);
-        }
+      }
+      if (sell_signal.amount && !DRY_RUN) {
+        log.debug2("sell signal, do sell", sell_signal);
+        await go_sell(strategy, sell_signal, current_time, wallet, trade);
+        await persistent_trades(robot, trades);
+      } else if (sell_signal.amount) {
+        log.debug2("ignore sell since dryrun", sell_signal);
       }
     }
   }
