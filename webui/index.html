@@ -93,7 +93,7 @@
             const rsp = await fetch("/api/update")
             data = await rsp.json()
             console.log(data)
-            const signalColors = ["#db9023", "#26a8b8", "#eb3f7a"]
+            const signalColors = ["#db9023", "purple", "#26a8b8",]
 
             Object.keys(data.tfs[Object.keys(data.tfs)[0]].slice(-1)[0].signal).forEach((key, idx) => {
                 signals[key] = chart.addLineSeries({
