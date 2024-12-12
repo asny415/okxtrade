@@ -19,11 +19,11 @@ export const strategy: Strategy = {
     _dfs: DataFrame[][]
   ): Signal {
     const last_valid_trade = trades
-      .filter((t) => !t.is_open && t.orders.length == 1)
+      .filter((t) => !(!t.is_open && t.orders.length == 1))
       .sort((a, b) => b.orders[0].place_at - a.orders[0].place_at)[0];
     if (
-      current_time - last_valid_trade.orders[0].place_at <
-      12 * 60 * 60 * 1000
+      last_valid_trade &&
+      current_time - last_valid_trade.orders[0].place_at < 12 * 60 * 60 * 1000
     ) {
       //间隔不到12小时
       return {};
