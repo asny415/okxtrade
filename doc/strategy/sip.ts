@@ -1,4 +1,3 @@
-import moment from "https://deno.land/x/momentjs@2.29.1-deno/mod.ts";
 import {
   Strategy,
   Wallet,
@@ -19,11 +18,14 @@ export const strategy: Strategy = {
     trades: Trade[],
     _dfs: DataFrame[][]
   ): Signal {
-    const now = new Date(current_time);
-    const trade_tag = moment(now).format("YYYYMMDDHH");
-    if (now.getMinutes() == 55 && now.getHours() % 12 == 10) {
-      if (trades.filter((t) => t.tag == trade_tag).length > 0) return {};
-    } else {
+    const last_valid_trade = trades
+      .filter((t) => !t.is_open && t.orders.length == 1)
+      .sort((a, b) => b.orders[0].place_at - a.orders[0].place_at)[0];
+    if (
+      current_time - last_valid_trade.orders[0].place_at <
+      12 * 60 * 60 * 1000
+    ) {
+      //间隔不到12小时
       return {};
     }
     const open_trades = trades.filter((t) => t.is_open);
@@ -35,7 +37,6 @@ export const strategy: Strategy = {
     return {
       price: current_price,
       amount: Math.floor((money * 1000) / current_price) / 1000,
-      tag: trade_tag,
     };
   },
 };

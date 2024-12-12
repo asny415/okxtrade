@@ -37,7 +37,7 @@ export interface Trade {
   open_rate: number;
   amount: number;
   orders: [Order];
-  tag: string;
+  tag?: string;
 }
 
 export enum DataFrameState {

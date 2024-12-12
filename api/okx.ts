@@ -1,4 +1,3 @@
-import { args } from "../common/args.ts";
 import { getLog, load_candles, okx2df } from "../common/func.ts";
 import { DataFrame } from "../common/strategy.ts";
 import { TimeFrame } from "../common/strategy.ts";
