@@ -228,7 +228,7 @@ export async function update_order_status(
         if (check_order_stable(order)) {
           trade.is_open = trade_left(trade) > MIN_SELL;
           await persistent_trades(robot, [trade]);
-          extra_notify(
+          await extra_notify(
             `订单确定: trade:${trade.id} order:${order.id}, state:${order.state} avg:${order.average} filled:${order.filled}`
           );
         }
@@ -342,7 +342,7 @@ export async function go_buy(
   });
   const id = data[0].ordId;
   const tradeid = `${new Date().getTime()}`;
-  extra_notify(
+  await extra_notify(
     `下买单: trade:${tradeid} order:${id} amount:${signal.amount.toFixed(
       3
     )} price:${signal.price.toFixed(3)}`
@@ -445,7 +445,7 @@ export async function go_sell(
     px: `${signal.price}`,
   });
   const id = data[0].ordId;
-  extra_notify(
+  await extra_notify(
     `下卖单: trade:${trade.id} order:${id} amount:${signal.amount.toFixed(
       3
     )} price:${signal.price.toFixed(3)}`
