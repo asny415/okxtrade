@@ -100,7 +100,6 @@ const wallet: Wallet = { robot: "", pair: "", balance: 0, goods: 0 };
 let current_price: number = 0;
 let robot = "";
 async function extra_notify(msg: string) {
-  await update_wallet(wallet);
   const open_trades = trades.filter((t) => t.is_open);
   const total_value_origin =
     wallet.balance +
@@ -115,7 +114,11 @@ async function extra_notify(msg: string) {
   const header = `${robot}(${stable ? "" : " ~ "}${total_value_now.toFixed(
     1
   )} ${earn_rate.toFixed(1)}% ${money_left_rate.toFixed(0)}%):`;
-  await notify(`${header}\n${msg}`);
+  try {
+    await notify(`${header}\n${msg}`);
+  } catch (err) {
+    log.error("telegram error", { err });
+  }
 }
 
 export async function run() {
@@ -338,6 +341,12 @@ export async function go_buy(
     px: `${signal.price}`,
   });
   const id = data[0].ordId;
+  const tradeid = `${new Date().getTime()}`;
+  extra_notify(
+    `下买单: trade:${tradeid} order:${id} amount:${signal.amount.toFixed(
+      3
+    )} price:${signal.price.toFixed(3)}`
+  );
 
   const order: Order = {
     id,
@@ -351,7 +360,7 @@ export async function go_buy(
     place_at: current_time,
   };
   const trade: Trade = {
-    id: `${new Date().getTime()}`,
+    id: tradeid,
     pair: wallet.pair,
     is_open: true,
     open_rate: signal.price,
@@ -360,11 +369,6 @@ export async function go_buy(
     orders: [order],
   };
   trades.push(trade);
-  extra_notify(
-    `下买单: trade:${trade.id} order:${order.id} amount:${order.amount.toFixed(
-      3
-    )} price:${order.price.toFixed(3)}`
-  );
   log.info("buy order", {
     trade: trade.id,
     price: order.price,
@@ -441,6 +445,11 @@ export async function go_sell(
     px: `${signal.price}`,
   });
   const id = data[0].ordId;
+  extra_notify(
+    `下卖单: trade:${trade.id} order:${id} amount:${signal.amount.toFixed(
+      3
+    )} price:${signal.price.toFixed(3)}`
+  );
 
   const order: Order = {
     id,
@@ -460,9 +469,4 @@ export async function go_sell(
     tag: signal.tag,
   });
   trade.orders.push(order);
-  extra_notify(
-    `下卖单: trade:${trade.id} order:${order.id} amount:${order.amount.toFixed(
-      3
-    )} price:${order.price.toFixed(3)}`
-  );
 }
