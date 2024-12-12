@@ -54,28 +54,24 @@ export const strategy: Strategy = {
     if (!isBRP) return { ma5, ma20 };
     const MIN_BUY = 100;
     if (wallet.balance < MIN_BUY) return { ma5, ma20 };
-    // const last_open_trade = trades.filter((t) => t.is_open).slice(-1)[0];
-    // if (last_open_trade) {
-    //   if (last_open_trade.open_rate <= current_price * 1.01)
-    //     return { ma5, ma20 };
-    // }
+
+    //两次购买价格差必须超过2%
+    const last_open_trade = [...trades]
+      .filter((t) => t.is_open)
+      .sort((a, b) => b.orders[0].place_at - a.orders[0].place_at)[0];
+    if (last_open_trade) {
+      if (last_open_trade.open_rate <= current_price * 1.02)
+        return { ma5, ma20 };
+    }
 
     const now = new Date(current_time);
     const trade_tag = moment(now).format("YYYYMMDDHH");
 
-    //两个开放的trade之间必须间隔至少1个小时
     const open_trades = trades.filter((t) => t.is_open);
-    if (
-      open_trades.length > 0 &&
-      current_time - open_trades.slice(-1)[0].orders[0].place_at < 1000 * 3600
-    ) {
-      return { ma5, ma20 };
-    }
-
     const total_value =
       wallet.balance +
       open_trades.reduce((r, t) => (r += trade_left(t) * t.open_rate), 0);
-    const split_total = 3; //总资金分成3份
+    const split_total = 3;
     const money = Math.min(wallet.balance, total_value / split_total); //最多购买1份
     return {
       price: current_price,
