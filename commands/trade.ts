@@ -27,10 +27,11 @@ const MIN_SELL = 0.001;
 const DRY_RUN = false;
 export const DOC = "perform live quantitative trading with a real wallet";
 export const options: ParseArgsParam & Docable = {
-  string: ["pair", "strategy", "wallet"],
+  string: ["pair", "strategy", "wallet", "robot"],
   alias: { p: "pair", s: "strategy", w: "wallet" },
   default: { wallet: 900 },
   doc: {
+    robot: "set robot name of this run",
     pair: "the currency pairs to be retrieved, separated by commas",
     strategy: "the strategy to be used",
     wallet:
@@ -129,8 +130,12 @@ export async function run() {
   await dotenv.load({ envPath: env_path, export: true });
   const strategy = await load_stragegy();
   log.info("start trade ...", { strategy: strategy.name, dryrun: DRY_RUN });
-  robot = `trade-${strategy.name}`;
-  args.robot = robot;
+  if (!args.robot) {
+    robot = `trade-${strategy.name}`;
+    args.robot = robot;
+  } else {
+    robot = args.robot;
+  }
   const pairs = args.p.split(",");
   if (pairs.length != 1) {
     throw new Error("only 1 pair allowed");

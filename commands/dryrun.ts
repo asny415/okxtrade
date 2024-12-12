@@ -23,7 +23,7 @@ const log = getLog("dryrun");
 export const DOC =
   "validate a strategy with real-time live data using a simulated wallet";
 export const options: ParseArgsParam & Docable = {
-  string: ["pair", "strategy", "wallet"],
+  string: ["pair", "strategy", "wallet", "robot"],
   default: {
     pair: "TON-USDT",
     strategy: "sip",
@@ -31,6 +31,7 @@ export const options: ParseArgsParam & Docable = {
   },
   alias: { p: "pair", s: "strategy", w: "wallet" },
   doc: {
+    robot: "set robot name of this run",
     pair: "the currency pairs to be retrieved, separated by commas",
     strategy: "the strategy to be used",
     wallet: "the initial amount of the simulated wallet",
@@ -79,23 +80,25 @@ export async function init_trades(robot: string): Promise<Trade[]> {
 
 export async function run() {
   const strategy = await load_stragegy();
-  const robot = `dryrun-${strategy.name}`;
-  args.robot = robot;
+  if (!args.robot) {
+    const robot = `dryrun-${strategy.name}`;
+    args.robot = robot;
+  }
   log.info("start dryrun ...", { strategy: strategy.name, args });
   const pairs = args.p.split(",");
   if (pairs.length != 1) {
     throw new Error("only 1 pair allowed");
   }
   const pair = pairs[0];
-  const wallet = await init_wallet(robot, pair);
-  const trades = await init_trades(robot);
+  const wallet = await init_wallet(args.robot, pair);
+  const trades = await init_trades(args.robot);
 
   okxws(
     pair,
     strategy.timeframes,
     async (current_time: number, current_price: number, dfs: DataFrame[][]) => {
       await go(
-        robot,
+        args.robot,
         strategy,
         current_time,
         current_price,
