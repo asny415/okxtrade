@@ -15,7 +15,7 @@ interface MySignal {
 
 export const strategy: Strategy = {
   name: "reversal_point",
-  timeframes: [{ timeframe: "5m", depth: 60 }],
+  timeframes: [{ timeframe: "5m", depth: 30 }],
   populate_sell_trend(
     _current_time: number,
     _current_price: number,
