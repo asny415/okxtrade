@@ -228,6 +228,7 @@ export async function update_order_status(
         if (check_order_stable(order)) {
           trade.is_open = trade_left(trade) > MIN_SELL;
           await persistent_trades(robot, [trade]);
+          await update_wallet(wallet);
           await extra_notify(
             `订单确定: trade:${trade.id} order:${order.id}, state:${order.state} avg:${order.average} filled:${order.filled}`
           );
