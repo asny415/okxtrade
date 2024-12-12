@@ -31,11 +31,10 @@ export const strategy: Strategy = {
       wallet.balance +
       open_trades.reduce((r, t) => (r += trade_left(t) * t.open_rate), 0);
     const split_total = 6;
-    const left_rate = wallet.balance / total_value;
-    if (left_rate < 1 / split_total) return {};
+    const money = Math.min(wallet.balance, total_value / split_total); //最多购买1份
     return {
       price: current_price,
-      amount: total_value / split_total / current_price,
+      amount: Math.floor((money * 1000) / current_price) / 1000,
       tag: trade_tag,
     };
   },

@@ -18,6 +18,7 @@
         <div id="subtitle" style="font-size: 14px; font-weight: normal; margin-bottom: 0.5em;">Subtitle or Description
         </div>
         <div id="radios"></div>
+        <div id="checks"></div>
     </div>
     <div id="tooltip" style="
         position: absolute;
@@ -88,17 +89,35 @@
         });
         sellOrderSeries.setData([])
         async function run() {
-            let data, buyOrders = [], sellOrders = []
+            let data, buyOrders = [], sellOrders = [], signals = {}
             const rsp = await fetch("/api/update")
             data = await rsp.json()
             console.log(data)
+            const signalColors = ["#db9023", "#26a8b8", "#eb3f7a"]
+            Object.keys(data.tfs[Object.keys(data.tfs)[0]][0].signal).forEach((key, idx) => {
+                signals[key] = chart.addLineSeries({
+                    color: signalColors[idx % signalColors.length],
+                })
+                signals[key].setData([])
+            })
+
             document.getElementById('subtitle').innerText = data.robot
             document.getElementById('radios').innerHTML = `${Object.keys(data.tfs).map((tf, idx) => `<input type="radio" id="${tf}" ${idx == 0 ? 'checked' : ''} name="tf" value="${tf}"><label for="${tf}">${tf}</label>`).join(' ')}`
+            document.getElementById('checks').innerHTML = `${Object.keys(signals).map((key) => `<input type="checkbox" checked class="signal" id="${key}" name="${key}"><label for="${key}">${key}</label>`).join(' ')}`
             let tf = Object.keys(data.tfs)[0]
             document.querySelectorAll('[name=tf]').forEach(n => {
                 n.onchange = (e) => {
                     tf = e.target.value
                     updateData()
+                }
+            })
+            document.querySelectorAll('.signal').forEach(n => {
+                n.onchange = (e) => {
+                    const name = e.target.name
+                    const currentVisibility = signals[name].options().visible;
+                    signals[name].applyOptions({
+                        visible: !currentVisibility
+                    });
                 }
             })
             chart.subscribeClick((param) => {
@@ -131,7 +150,6 @@
             while (true) {
                 const rsp = await fetch("/api/update")
                 data = await rsp.json()
-                console.log(data)
                 updateData()
                 await new Promise(r => setTimeout(r, 1000))
             }
@@ -147,12 +165,13 @@
                             low: r.l
                         }, {
                             time, value: r.vol, color: r.o >= r.c ? '#ef5350' : '#26a69a'
-                        }
+                        }, Object.keys(signals).reduce((r1, s) => { r1[s] = { time, value: r.signal[s] }; return r1; }, {})
                     ]
 
                 }).sort((a, b) => a[0].time - b[0].time)
                 candleSeries.setData(datas.map(r => r[0]));
                 hisSeries.setData(datas.map(r => r[1]));
+                Object.keys(signals).forEach(s => signals[s].setData(datas.map(r => r[2][s])))
                 buyOrders = []
                 sellOrders = []
                 data.trades.forEach(trade => {

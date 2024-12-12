@@ -19,6 +19,7 @@ import {
   OrderSide,
 } from "../common/strategy.ts";
 import { persistent_signal, persistent_trades } from "../common/persistent.ts";
+import { okx2df } from "../common/func.ts";
 
 const log = getLog("backtesting");
 export const DOC =
@@ -43,11 +44,11 @@ export async function run() {
   args.robot = robot;
   const pairs = args.p.split(",");
   const result: Record<string, string> = {};
-  for (const p of pairs) {
+  for (const pair of pairs) {
     const dataframes: Record<string, DataFrame[]> = {};
     for (const tf of strategy.timeframes) {
       if (!dataframes[tf.timeframe]) {
-        dataframes[tf.timeframe] = await load_dataframes(p, tf.timeframe);
+        dataframes[tf.timeframe] = await load_dataframes(pair, tf.timeframe);
       }
     }
     //按照 5m 1h 这样排序，越精确的时间越排在前面
@@ -55,14 +56,16 @@ export async function run() {
       .map((tf) => [...dataframes[tf.timeframe]])
       .sort((a, b) => b.length - a.length);
     const dfs: DataFrame[][] = [];
+
+    //在线获取初始的dataframe，只获取一次
     for (let idx = 0; idx < dfsrc.length; idx++) {
       const history = await load_candles(
-        p,
+        pair,
         strategy.timeframes[idx].timeframe,
         `${dfsrc[idx][0].ts}`,
         strategy.timeframes[idx].depth
       );
-      dfs.push(history);
+      dfs.push(history.map((r: string[]) => okx2df(r)));
     }
     const init_value = parseFloat(args.w);
     if (init_value <= 0) {
@@ -71,25 +74,29 @@ export async function run() {
     log.info("init balance", init_value);
     const wallet: Wallet = {
       robot,
-      pair: p,
+      pair,
       balance: init_value,
       goods: 0,
     };
     const trades: Trade[] = [];
     while (dfsrc[0].length > 0) {
+      //按照dfsrc每次递进一个frame往前演进
       const nextts = dfsrc[0][0].ts;
+      //每个timeframe依此处理，比如 5m 1h之类
       for (let i = 0; i < dfsrc.length; i++) {
         while (dfsrc[i][0]?.ts <= nextts) {
           const df = dfsrc[i].splice(0, 1)[0];
-          dfs[i].push(df);
+          //越新的越放在前面
+          dfs[i].splice(0, 0, df);
+          //保证传递给go函数的depth正确
           while (dfs[i].length > strategy.timeframes[i].depth) {
-            dfs[i].splice(0, 1);
+            dfs[i].splice(-1, 1);
           }
         }
       }
       if (dfsrc[0].length > 1) {
         const nexttick = dfsrc[0][0];
-        const thistick = dfs[0].slice(-1)[0];
+        const thistick = dfs[0][0];
         const delta = nexttick.ts - thistick.ts;
         const avg = Math.round(delta / 3);
         await go(
@@ -166,7 +173,7 @@ export async function go(
       robot,
       strategy.timeframes.map((tf, idx) => ({
         name: tf.timeframe,
-        dfs: { ...dfs[idx].slice(-1)[0], ...buy_signal },
+        dfs: { ...dfs[idx][0], signal: buy_signal },
       }))
     );
   }
@@ -177,10 +184,24 @@ export async function go(
   }
 
   for (const trade of trades) {
-    const sell_signal = check_roi(strategy, current_price, current_time, trade);
-    if (sell_signal.amount) {
-      await go_sell(strategy, sell_signal, current_time, wallet, trade);
-      await persistent_trades(robot, trades);
+    const roi_signal = check_roi(strategy, current_price, current_time, trade);
+    if (roi_signal.amount) {
+      let sell_signal = roi_signal;
+      if (strategy.populate_sell_trend) {
+        sell_signal = strategy.populate_sell_trend(
+          current_time,
+          current_price,
+          wallet,
+          trade,
+          dfs,
+          roi_signal
+        );
+      }
+
+      if (sell_signal.amount) {
+        await go_sell(strategy, sell_signal, current_time, wallet, trade);
+        await persistent_trades(robot, trades);
+      }
     }
   }
 }
@@ -192,9 +213,16 @@ export function go_buy(
   wallet: Wallet,
   trades: Trade[]
 ) {
-  if (!signal.amount || !signal.price || !signal.tag)
+  if (!signal.amount || !signal.price || !signal.tag) {
     throw new Error("bad signal for buy");
+  }
   if (wallet.balance < signal.amount * signal.price) {
+    log.error("not enough balance", {
+      balance: wallet.balance,
+      amount: signal.amount,
+      price: signal.price,
+      need: signal.amount * signal.price,
+    });
     throw new Error("not enough balance");
   }
   const order: Order = {

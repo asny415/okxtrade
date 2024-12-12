@@ -83,7 +83,8 @@ export interface Strategy {
     current_time: number,
     current_price: number,
     wallet: Wallet,
-    trades: Trade[],
-    dfs: DataFrame[][]
+    trade: Trade,
+    dfs: DataFrame[][],
+    roi_signal: Signal
   ) => Signal;
 }
