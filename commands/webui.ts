@@ -10,9 +10,10 @@ import { DataFrame, Trade } from "../common/strategy.ts";
 export const DOC =
   "view the historical process of a specific execution in a graphical interface";
 export const options: ParseArgsParam & Docable = {
-  string: ["robot"],
+  string: ["robot", "strategy"],
   alias: { r: "robot" },
   doc: {
+    strategy: "open which db to read from",
     robot: "the default robot name for the chart",
   },
 };
