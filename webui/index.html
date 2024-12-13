@@ -90,7 +90,10 @@
         sellOrderSeries.setData([])
         async function run() {
             let data, buyOrders = [], sellOrders = [], signals = {}
-            const rsp = await fetch("/api/update")
+            const url = new URL(window.location.href);
+            const params = url.searchParams;
+            const robot = params.get('robot');
+            const rsp = await fetch(`/api/update${robot ? `?robot=${robot}` : ""}`)
             data = await rsp.json()
             console.log(data)
             const signalColors = ["#db9023", "purple", "#26a8b8",]
