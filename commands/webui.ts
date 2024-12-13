@@ -52,6 +52,7 @@ async function handleRequest(request: Request): Promise<Response> {
     }
 
     const robot = url.searchParams.get("robot") || body.robot || args.robot;
+    log.info("update request", { robot });
     const after = body.after || 0;
     const tfs: Record<string, DataFrame[]> = {};
     {
