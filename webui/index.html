@@ -155,7 +155,7 @@
             });
 
             while (true) {
-                const rsp = await fetch("/api/update")
+                const rsp = await fetch(`/api/update${robot ? `?robot=${robot}` : ""}`)
                 data = await rsp.json()
                 updateData()
                 await new Promise(r => setTimeout(r, 1000))
