@@ -114,7 +114,6 @@
         });
         sellClosedOrderSeries.setData([])
         document.getElementById('open_orders').onchange = (e) => {
-            const currentVisibility = buyOpenOrderSeries.options().visible;
             buyOpenOrderSeries.applyOptions({
                 visible: e.target.checked
             });
@@ -123,7 +122,6 @@
             });
         }
         document.getElementById('closed_orders').onchange = (e) => {
-            const currentVisibility = buyClosedOrderSeries.options().visible;
             buyClosedOrderSeries.applyOptions({
                 visible: e.target.checked
             });
@@ -181,10 +179,13 @@
                 const x = param.point.x;
                 const y = param.point.y;
 
+                const showOpened = buyOpenOrderSeries.options().visible;
+                const showClosed = buyClosedOrderSeries.options().visible;
+
                 // 找到最近的数据点
                 const timeAtMouse = chart.timeScale().coordinateToTime(x);
-                const focusBuys = [...buyOpenOrders, ...buyClosedOrders].filter((o) => o.time === timeAtMouse);
-                const focusSells = [...sellOpenOrders, ...sellClosedOrders].filter((o) => o.time === timeAtMouse);
+                const focusBuys = [...showOpened ? buyOpenOrders : [], ...showClosed ? buyClosedOrders : []].filter((o) => o.time === timeAtMouse);
+                const focusSells = [...showOpened ? sellOpenOrders : [], ...showClosed ? sellClosedOrders : []].filter((o) => o.time === timeAtMouse);
 
                 if (focusBuys.length || focusSells.length) {
                     // 显示 Tooltip
