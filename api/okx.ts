@@ -123,6 +123,7 @@ function keep_ws(
     };
     ws.onmessage = (event) => {
       last_event_ts = new Date().getTime();
+      log.debug3("ws event", { url, data: event.data });
       callback(event);
     };
     return ws;
