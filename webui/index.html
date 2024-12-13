@@ -233,7 +233,7 @@
                         if (!o.average) return; //没有成交价通常意味着没有成交量，忽略这个订单
                         const otime = Math.round(o.place_at / 1000)
                         const nearest_datas = datas.filter(a => a[0].time <= otime)
-                        const time = nearest_datas.length ? nearest_datas.slice(-1)[0][0].time : datas.slice(-1)[0][0].time
+                        const time = nearest_datas.length ? nearest_datas.slice(-1)[0][0].time : datas[0][0].time
                         if (o.side == 0) {
                             if (trade.is_open) {
                                 buyOpenOrders.push({
