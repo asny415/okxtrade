@@ -52,7 +52,7 @@ export async function init_trades(
   for await (const entry of entries) {
     trades.push(entry.value as Trade);
   }
-  return trades;
+  return trades.sort((a, b) => a.orders[0].place_at - b.orders[0].place_at);
 }
 
 async function update_wallet(wallet: {
@@ -366,7 +366,7 @@ export async function go_buy(
     px: `${signal.price}`,
   });
   const id = data[0].ordId;
-  const tradeid = `${new Date().getTime()}`;
+  const tradeid = `${current_time}`;
   await extra_notify(
     `下买单: trade:${tradeid} order:${id} amount:${signal.amount.toFixed(
       3
