@@ -17,8 +17,14 @@
         <div id="title" style="font-size: 18px; font-weight: bold;">OKX Trade</div>
         <div id="subtitle" style="font-size: 14px; font-weight: normal; margin-bottom: 0.5em;">Subtitle or Description
         </div>
-        <div id="radios"></div>
-        <div id="checks"></div>
+        <div style="display: flex;align-items: center;">
+            <div id="radios"></div>
+            <span style="margin-left:1em;"></span>
+            <div id="checks"></div>
+            <input style="margin-left: 1em;" checked type="checkbox" id="open_orders" /> <label for="open_orders">open
+                orders</label>
+            <input type="checkbox" id="closed_orders" /> <label for="closed_orders">closed orders</label>
+        </div>
     </div>
     <div id="tooltip" style="
         position: absolute;
@@ -72,24 +78,60 @@
             },
         });
 
-        const buyOrderSeries = chart.addLineSeries({
+        const buyOpenOrderSeries = chart.addLineSeries({
             color: 'black', // 点的颜色
             lineVisible: false,   // 隐藏线条
             pointMarkersVisible: true, // 显示交互点
             pointMarkersRadius: 1,
             crosshairMarkerRadius: 1,
         });
-        buyOrderSeries.setData([])
-        const sellOrderSeries = chart.addLineSeries({
+        buyOpenOrderSeries.setData([])
+        const sellOpenOrderSeries = chart.addLineSeries({
             color: 'black', // 点的颜色
             lineVisible: false,   // 隐藏线条
             pointMarkersVisible: true, // 显示交互点
             pointMarkersRadius: 1,
             crosshairMarkerRadius: 1,
         });
-        sellOrderSeries.setData([])
+        sellOpenOrderSeries.setData([])
+        const buyClosedOrderSeries = chart.addLineSeries({
+            color: 'black', // 点的颜色
+            lineVisible: false,   // 隐藏线条
+            pointMarkersVisible: true, // 显示交互点
+            pointMarkersRadius: 1,
+            crosshairMarkerRadius: 1,
+        });
+        buyClosedOrderSeries.setData([])
+        const sellClosedOrderSeries = chart.addLineSeries({
+            color: 'black', // 点的颜色
+            lineVisible: false,   // 隐藏线条
+            pointMarkersVisible: true, // 显示交互点
+            pointMarkersRadius: 1,
+            crosshairMarkerRadius: 1,
+            visible: false
+        });
+        sellClosedOrderSeries.setData([])
+        document.getElementById('open_orders').onchange = (e) => {
+            const currentVisibility = buyOpenOrderSeries.options().visible;
+            buyOpenOrderSeries.applyOptions({
+                visible: e.target.checked
+            });
+            sellOpenOrderSeries.applyOptions({
+                visible: e.target.checked
+            });
+        }
+        document.getElementById('closed_orders').onchange = (e) => {
+            const currentVisibility = buyClosedOrderSeries.options().visible;
+            buyClosedOrderSeries.applyOptions({
+                visible: e.target.checked
+            });
+            sellClosedOrderSeries.applyOptions({
+                visible: e.target.checked
+            });
+        }
+
         async function run() {
-            let data, buyOrders = [], sellOrders = [], signals = {}
+            let data, buyOpenOrders = [], sellOpenOrders = [], buyClosedOrders = [], sellClosedOrders = [], signals = {}
             const url = new URL(window.location.href);
             const params = url.searchParams;
             const robot = params.get('robot');
@@ -179,8 +221,10 @@
                 candleSeries.setData(datas.map(r => r[0]));
                 hisSeries.setData(datas.map(r => r[1]));
                 Object.keys(signals).forEach(s => signals[s].setData(datas.map(r => r[2][s])))
-                buyOrders = []
-                sellOrders = []
+                buyOpenOrders = []
+                sellOpenOrders = []
+                buyClosedOrders = []
+                sellClosedOrders = []
                 data.trades.forEach(trade => {
                     trade.orders.forEach((o => {
                         if (!o.average) return; //没有成交价通常意味着没有成交量，忽略这个订单
@@ -188,31 +232,62 @@
                         const nearest_datas = datas.filter(a => a[0].time <= otime)
                         const time = nearest_datas.length ? nearest_datas.slice(-1)[0][0].time : datas.slice(-1)[0][0].time
                         if (o.side == 0) {
-                            buyOrders.push({
-                                time,
-                                value: o.average,
-                                filled: o.filled,
-                                trade: trade.id
-                            })
+                            if (trade.is_open) {
+                                buyOpenOrders.push({
+                                    time,
+                                    value: o.average,
+                                    filled: o.filled,
+                                    trade: trade.id
+                                })
+                            } else {
+                                buyClosedOrders.push({
+                                    time,
+                                    value: o.average,
+                                    filled: o.filled,
+                                    trade: trade.id
+                                })
+                            }
                         } else {
-                            sellOrders.push({
-                                time,
-                                value: o.average,
-                                filled: o.filled,
-                                trade: trade.id
-                            })
+                            if (trade.is_open) {
+                                sellOpenOrders.push({
+                                    time,
+                                    value: o.average,
+                                    filled: o.filled,
+                                    trade: trade.id
+                                })
+
+                            } else {
+                                sellClosedOrders.push({
+                                    time,
+                                    value: o.average,
+                                    filled: o.filled,
+                                    trade: trade.id
+                                })
+                            }
                         }
                     }))
                 });
-                buyDatas = buyOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != buyOrders[i - 1].time)
-                sellDatas = sellOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != sellOrders[i - 1].time)
-                buyOrderSeries.setData(buyDatas)
-                buyOrderSeries.setMarkers(buyDatas.map(o => ({
+                buyOpenDatas = buyOpenOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != buyOpenOrders[i - 1].time)
+                sellOpenDatas = sellOpenOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != sellOpenOrders[i - 1].time)
+                buyClosedDatas = buyClosedOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != buyClosedOrders[i - 1].time)
+                sellClosedDatas = sellClosedOrders.sort((a, b) => a.time - b.time).filter((p, i) => i == 0 || p.time != sellClosedOrders[i - 1].time)
+                buyOpenOrderSeries.setData(buyOpenDatas)
+                buyOpenOrderSeries.setMarkers(buyOpenDatas.map(o => ({
                     time: o.time,
                     position: 'belowBar', color: 'purple', shape: 'arrowUp', text: 'B'
                 })))
-                sellOrderSeries.setData(sellDatas)
-                sellOrderSeries.setMarkers(sellDatas.map(o => ({
+                sellOpenOrderSeries.setData(sellOpenDatas)
+                sellOpenOrderSeries.setMarkers(sellOpenDatas.map(o => ({
+                    time: o.time,
+                    position: 'aboveBar', color: 'red', shape: 'arrowUp', text: 'S'
+                })))
+                buyClosedOrderSeries.setData(buyClosedDatas)
+                buyClosedOrderSeries.setMarkers(buyClosedDatas.map(o => ({
+                    time: o.time,
+                    position: 'belowBar', color: 'purple', shape: 'arrowUp', text: 'B'
+                })))
+                sellOpenOrderSeries.setData(sellClosedDatas)
+                sellOpenOrderSeries.setMarkers(sellClosedDatas.map(o => ({
                     time: o.time,
                     position: 'aboveBar', color: 'red', shape: 'arrowUp', text: 'S'
                 })))
