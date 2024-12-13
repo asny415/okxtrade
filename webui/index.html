@@ -183,8 +183,8 @@
 
                 // 找到最近的数据点
                 const timeAtMouse = chart.timeScale().coordinateToTime(x);
-                const focusBuys = buyOrders.filter((o) => o.time === timeAtMouse);
-                const focusSells = sellOrders.filter((o) => o.time === timeAtMouse);
+                const focusBuys = [...buyOpenOrders, ...buyClosedOrders].filter((o) => o.time === timeAtMouse);
+                const focusSells = [...sellOpenOrders, ...sellClosedOrders].filter((o) => o.time === timeAtMouse);
 
                 if (focusBuys.length || focusSells.length) {
                     // 显示 Tooltip
