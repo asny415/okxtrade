@@ -141,7 +141,7 @@ export async function run() {
   log.info("start trade ...", { strategy: strategy.name, dryrun: DRY_RUN });
   for (const env_path of [
     path.join(args.basedir, `.${robot}.env`),
-    path.join(args.basedir, `.${strategy.name}.env`),
+    path.join(args.basedir, `.${args.strategy}.env`),
     path.join(args.basedir, ".env"),
   ]) {
     if (fileExistsSync(env_path)) {
