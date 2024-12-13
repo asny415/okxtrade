@@ -8,7 +8,7 @@ export let db: Deno.Kv;
 const log = getLog("persistent");
 
 export async function init() {
-  const dbpath = path.join(args.basedir, "db", "data");
+  const dbpath = path.join(args.basedir, "db", args.strategy);
   await ensureDir(path.dirname(dbpath));
   db = await Deno.openKv(dbpath);
 }
