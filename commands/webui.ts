@@ -54,7 +54,8 @@ async function handleRequest(request: Request): Promise<Response> {
 
     const robot = url.searchParams.get("robot") || body.robot || args.robot;
     log.info("update request", { robot });
-    const after = body.after || 0;
+    //默认只返回最近3天的蜡烛数据
+    const after = body.after || new Date().getTime() - 3 * 24 * 3600 * 1000;
     const tfs: Record<string, DataFrame[]> = {};
     {
       const prefix = ["signal", robot];
