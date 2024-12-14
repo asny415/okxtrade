@@ -21,7 +21,7 @@ export const options: ParseArgsParam & Docable = {
 const log = getLog("webui");
 export function run() {
   // 启动服务器
-  const port = 8000;
+  const port = parseInt(args.webui);
   log.info(`服务器正在运行，监听端口 ${port}`);
   Deno.serve({ port }, handleRequest);
 }

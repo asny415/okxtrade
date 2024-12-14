@@ -4,16 +4,15 @@ import { mergeOpts } from "./func.ts";
 import { run as webui } from "../commands/webui.ts";
 import * as persistent from "./persistent.ts";
 export const common_options: ParseArgsParam & Docable = {
-  string: ["basedir", "verbose"],
-  boolean: ["webui", "telegram", "help"],
-  default: { basedir: "./userdata", verbose: "0" },
+  string: ["basedir", "verbose", "webui"],
+  boolean: ["telegram", "help"],
+  default: { basedir: "./userdata", verbose: "0", webui: "8000" },
   alias: { v: "verbose", b: "basedir", u: "webui", h: "help" },
   doc: {
     basedir: "specify the directory where all user data is stored",
     verbose:
       "specify the level of debugging information to be output, could be 1,2,3",
-    webui:
-      "whether to start the web UI service while running other commands simultaneously",
+    webui: " launch the web UI interface and specify the listening port",
     telegram: "specify whether to enable Telegram notifications",
     help: "this help",
   },
