@@ -135,6 +135,11 @@ export async function run() {
       (r, t) => (r += t.is_open ? trade_left(t) : 0),
       0
     );
+    log.info("bt result:", {
+      balance: wallet.balance,
+      goods: left_total,
+      last_price: current_price,
+    });
     const last_value = wallet.balance + left_total * current_price;
     result[wallet.pair] = (
       ((last_value - init_value) * 100) /

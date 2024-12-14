@@ -16,8 +16,7 @@
         z-index: 100;
         color: #333;">
         <div id="title" style="font-size: 18px; font-weight: bold;">OKX Trade</div>
-        <div id="subtitle" style="font-size: 14px; font-weight: normal; margin-bottom: 0.5em;">Subtitle or Description
-        </div>
+        <div id="subtitle" style="font-size: 14px; font-weight: normal; margin-bottom: 0.5em;"></div>
         <div style="display: flex;align-items: center;">
             <div id="radios"></div>
             <span style="margin-left:1em;"></span>
@@ -207,6 +206,25 @@
             }
 
             function updateData() {
+                if (data.wallet) {
+                    let goods = 0, value = data.wallet, startts = 0
+                    data.trades.reduce((r, t) => [...r, ...t.orders], []).forEach((o) => {
+                        if (o.side == 0) {//buy order
+                            goods += o.filled + o.fee
+                            value -= o.filled * o.average
+                        } else {
+                            goods -= o.filled
+                            value += o.filled * o.average + o.fee
+                        }
+                        if (startts == 0 || o.place_at < startts) {
+                            startts = o.place_at
+                        }
+                    })
+                    const price = data.tfs[tf].slice(-1)[0].c
+                    const days = (data.tfs[tf].slice(-1)[0].ts - startts) / 1000 / 3600 / 24
+                    const rate = (price * goods + value - data.wallet) * 100 / data.wallet
+                    document.getElementById('subtitle').innerText = `${data.robot}:${days.toFixed(0)}天盈利${rate.toFixed(2)}%`
+                }
                 const datas = data.tfs[tf].map(r => {
                     const time = Math.round(r.ts / 1000)
                     return [
