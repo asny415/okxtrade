@@ -7,7 +7,7 @@ import { load_stragegy } from "./strategy.ts";
 export const common_options: ParseArgsParam & Docable = {
   string: ["basedir", "verbose", "webui"],
   boolean: ["telegram", "help"],
-  default: { basedir: "./userdata", verbose: "0", webui: "8000" },
+  default: { basedir: "./userdata", verbose: "0" },
   alias: { v: "verbose", b: "basedir", u: "webui", h: "help" },
   doc: {
     basedir: "specify the directory where all user data is stored",
@@ -21,15 +21,16 @@ export const common_options: ParseArgsParam & Docable = {
 
 export let args: ParseArgsReturn = { _: [] };
 
-export async function parse(opts: ParseArgsParam) {
+export async function parse(cmd: string, opts: ParseArgsParam) {
   args = parseArgs(Deno.args.slice(1), mergeOpts(common_options, opts));
+  args.cmd = cmd;
   if (args.webui && !args.help) {
     webui();
   }
   if (args.strategy) {
     await load_stragegy();
   }
-  if (!args.help) {
+  if (!args.help && args.cmd != "download") {
     await persistent.init();
   }
   return args;

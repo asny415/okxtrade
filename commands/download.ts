@@ -44,9 +44,9 @@ export async function run() {
           const rt = parseInt(r[0]);
           if (rt >= ts.getTime()) {
             df.push(r);
-            if (rt < time) {
-              time = rt;
-            }
+          }
+          if (rt < time) {
+            time = rt;
           }
         }
       } else {
@@ -54,13 +54,11 @@ export async function run() {
         break;
       }
     }
-    if (time >= ts.getTime()) {
-      await ensureDir(path.dirname(filename));
-      await Deno.writeTextFile(
-        filename,
-        JSON.stringify(df.sort((a, b) => parseInt(a[0]) - parseInt(b[0])))
-      );
-      log.info("succ");
-    }
+    await ensureDir(path.dirname(filename));
+    await Deno.writeTextFile(
+      filename,
+      JSON.stringify(df.sort((a, b) => parseInt(a[0]) - parseInt(b[0])))
+    );
+    log.info("succ");
   }
 }

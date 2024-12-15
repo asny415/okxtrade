@@ -20,7 +20,7 @@ if (import.meta.main) {
   };
   const cmd = Deno.args[0];
   if (cmd in commands) {
-    await parse(commands[cmd].options);
+    await parse(cmd, commands[cmd].options);
     if (args.help) {
       help(commands, cmd);
     } else {

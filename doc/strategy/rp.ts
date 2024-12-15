@@ -11,11 +11,15 @@ import { trade_left } from "../../common/func.ts";
 interface MySignal {
   ma5: number;
   ma20: number;
+  mad3: number;
 }
 
 export const strategy: Strategy = {
   name: "reversal_point",
-  timeframes: [{ timeframe: "5m", depth: 30 }],
+  timeframes: [
+    { timeframe: "5m", depth: 30 },
+    { timeframe: "1D", depth: 10 },
+  ],
   populate_sell_trend(
     _current_time: number,
     _current_price: number,
@@ -25,6 +29,7 @@ export const strategy: Strategy = {
     signal: Signal
   ): Signal {
     if (dfs[0].length < 21) throw new Error("should not happen");
+    if (dfs[1].length < 10) throw new Error("should not happen");
     //dfs里面只包含一个5m蜡烛数据，长度不超过30，按照时间从新到旧排序
     //判断当前是否处于下跌的拐点。
     const ma5 = dfs[0].slice(0, 5).reduce((r, i) => r + i.c, 0) / 5;
@@ -50,18 +55,21 @@ export const strategy: Strategy = {
     const lastma5 = dfs[0].slice(1, 6).reduce((r, i) => r + i.c, 0) / 5;
     const ma20 = dfs[0].slice(0, 20).reduce((r, i) => r + i.c, 0) / 20;
     const lastma20 = dfs[0].slice(1, 21).reduce((r, i) => r + i.c, 0) / 20;
+    const mad3 = dfs[1].slice(0, 3).reduce((r, i) => r + i.c, 0) / 3;
+    const base_signal = { ma5, ma20, mad3 };
     const isBRP = ma5 > ma20 && lastma5 < lastma20;
-    if (!isBRP) return { ma5, ma20 };
+    if (!isBRP) return base_signal;
+    //小于3日均价再购买
+    if (current_price > mad3) return base_signal;
     const MIN_BUY = 100;
-    if (wallet.balance < MIN_BUY) return { ma5, ma20 };
+    if (wallet.balance < MIN_BUY) return base_signal;
 
     //两次购买价格差必须超过2%
     const last_open_trade = [...trades]
       .filter((t) => t.is_open)
       .sort((a, b) => b.orders[0].place_at - a.orders[0].place_at)[0];
     if (last_open_trade) {
-      if (last_open_trade.open_rate <= current_price * 1.02)
-        return { ma5, ma20 };
+      if (last_open_trade.open_rate <= current_price * 1.02) return base_signal;
     }
 
     const now = new Date(current_time);
@@ -77,8 +85,7 @@ export const strategy: Strategy = {
       price: current_price,
       amount: Math.floor((money * 1000) / current_price) / 1000,
       tag: trade_tag,
-      ma5,
-      ma20,
+      ...base_signal,
     };
   },
 };
