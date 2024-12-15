@@ -1,4 +1,3 @@
-import moment from "https://deno.land/x/momentjs@2.29.1-deno/mod.ts";
 import {
   Strategy,
   Wallet,
@@ -11,7 +10,7 @@ import { trade_left } from "../../common/func.ts";
 interface MySignal {
   ma5: number;
   ma20: number;
-  mad7: number;
+  mad5: number;
 }
 
 export const strategy: Strategy = {
@@ -41,7 +40,7 @@ export const strategy: Strategy = {
     return {};
   },
   populate_buy_trend(
-    current_time: number,
+    _current_time: number,
     current_price: number,
     wallet: Wallet,
     trades: Trade[],
@@ -55,12 +54,12 @@ export const strategy: Strategy = {
     const lastma5 = dfs[0].slice(1, 6).reduce((r, i) => r + i.c, 0) / 5;
     const ma20 = dfs[0].slice(0, 20).reduce((r, i) => r + i.c, 0) / 20;
     const lastma20 = dfs[0].slice(1, 21).reduce((r, i) => r + i.c, 0) / 20;
-    const mad7 = dfs[1].slice(0, 7).reduce((r, i) => r + i.c, 0) / 7;
-    const base_signal = { ma5, ma20, mad7 };
+    const mad5 = dfs[1].slice(0, 5).reduce((r, i) => r + i.c, 0) / 5;
+    const base_signal = { ma5, ma20, mad5 };
     const isBRP = ma5 > ma20 && lastma5 < lastma20;
     if (!isBRP) return base_signal;
     //小于3日均价再购买
-    if (current_price > mad7) return base_signal;
+    if (current_price > mad5) return base_signal;
     const MIN_BUY = 100;
     if (wallet.balance < MIN_BUY) return base_signal;
 
@@ -72,9 +71,6 @@ export const strategy: Strategy = {
       if (last_open_trade.open_rate <= current_price * 1.02) return base_signal;
     }
 
-    const now = new Date(current_time);
-    const trade_tag = moment(now).format("YYYYMMDDHH");
-
     const open_trades = trades.filter((t) => t.is_open);
     const total_value =
       wallet.balance +
@@ -84,7 +80,6 @@ export const strategy: Strategy = {
     return {
       price: current_price,
       amount: Math.floor((money * 1000) / current_price) / 1000,
-      tag: trade_tag,
       ...base_signal,
     };
   },
