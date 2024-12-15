@@ -4,7 +4,7 @@ import * as dryrun from "./commands/dryrun.ts";
 import * as trade from "./commands/trade.ts";
 import * as webui from "./commands/webui.ts";
 import { getLog } from "./common/func.ts";
-import { args, parse } from "./common/args.ts";
+import { args, parse } from "./modules/args.ts";
 import { Command } from "./common/type.ts";
 import { help } from "./common/help.ts";
 

@@ -3,9 +3,10 @@ import { join, fromFileUrl } from "jsr:@std/path";
 import { dirname } from "jsr:@std/path";
 import { Docable, ParseArgsParam } from "../common/type.ts";
 import { getLog } from "../common/func.ts";
-import { args } from "../common/args.ts";
-import { list } from "../common/persistent.ts";
+import { args } from "../modules/args.ts";
+import { list } from "../modules/persistent.ts";
 import { DataFrame, Trade } from "../common/strategy.ts";
+import { strategy } from "../modules/strategy.ts";
 
 export const DOC =
   "view the historical process of a specific execution in a graphical interface";
@@ -45,7 +46,7 @@ async function handleRequest(request: Request): Promise<Response> {
 
   // 处理API更新请求
   if (url.pathname === "/api/update") {
-    let body = { robot: false, after: 0 };
+    let body = { robot: false };
     try {
       body = await request.json();
     } catch (_err) {
@@ -54,22 +55,23 @@ async function handleRequest(request: Request): Promise<Response> {
 
     const robot = url.searchParams.get("robot") || body.robot || args.robot;
     log.info("update request", { robot });
-    //默认只返回最近3天的蜡烛数据
-    const after = body.after;
     const tfs: Record<string, DataFrame[]> = {};
-    {
-      const prefix = ["signal", robot];
+    let now = 0;
+    for (const tf of strategy.timeframes) {
+      const prefix = ["signal", robot, tf];
       const entries = list({ prefix });
       for await (const entry of entries) {
-        const ts = entry.key.slice(-1)[0].toString();
-        const name = entry.key[2].toString();
-        if (parseInt(ts) > after) {
-          if (!tfs[name]) {
-            tfs[name] = [];
-          }
-          tfs[name].push(entry.value as DataFrame);
+        const ts = parseInt(entry.key.slice(-1)[0].toString());
+        if (now < ts) now = ts;
+        if (!tfs[tf.timeframe]) {
+          tfs[tf.timeframe] = [];
         }
+        tfs[tf.timeframe].push(entry.value as DataFrame);
       }
+      //只返回最近三天的蜡烛数据
+      tfs[tf.timeframe] = tfs[tf.timeframe].filter(
+        (v) => v.ts > now - 3 * 24 * 3600 * 1000
+      );
     }
 
     const trades: Trade[] = [];
@@ -84,7 +86,6 @@ async function handleRequest(request: Request): Promise<Response> {
 
     const updateData = {
       robot,
-      after,
       tfs,
       trades,
       wallet: args.wallet ? parseFloat(args.wallet) : null,

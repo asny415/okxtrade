@@ -1,13 +1,8 @@
 import * as dotenv from "jsr:@std/dotenv";
 import * as path from "jsr:@std/path";
-import {
-  getLog,
-  load_stragegy,
-  trade_left,
-  fileExistsSync,
-} from "../common/func.ts";
+import { getLog, trade_left, fileExistsSync } from "../common/func.ts";
 import { Docable, ParseArgsParam } from "../common/type.ts";
-import { args } from "../common/args.ts";
+import { args } from "../modules/args.ts";
 import {
   DataFrame,
   Wallet,
@@ -23,12 +18,12 @@ import {
   list,
   persistent_signal,
   persistent_trades,
-} from "../common/persistent.ts";
+} from "../modules/persistent.ts";
 import { notify } from "../plugin/telegram.ts";
 import { ping } from "../plugin/health_ping.ts";
+import { check_roi, MIN_SELL, strategy } from "../modules/strategy.ts";
 
 const log = getLog("dryrun");
-const MIN_SELL = 0.001;
 const DRY_RUN = false;
 export const DOC = "perform live quantitative trading with a real wallet";
 export const options: ParseArgsParam & Docable = {
@@ -131,7 +126,6 @@ export async function run() {
   if (!args.pair || !args.strategy) {
     throw new Error("use --help for how to use");
   }
-  const strategy = await load_stragegy();
   if (!args.robot) {
     robot = `trade-${strategy.name}`;
     args.robot = robot;
@@ -273,7 +267,7 @@ export async function update_order_status(
 
 export async function go(
   robot: string,
-  strategy: Required<Strategy>,
+  strategy: Strategy,
   current_time: number,
   current_price: number,
   wallet: Wallet,
@@ -286,7 +280,7 @@ export async function go(
   if (there_is_no_open_order) {
     log.debug2("check buy signal");
     asset_goods_match(wallet, trades);
-    const buy_signal = strategy.populate_buy_trend(
+    const buy_signal = strategy.populate_buy_trend!(
       current_time,
       current_price,
       wallet,
@@ -345,7 +339,7 @@ export async function go(
 }
 
 export async function go_buy(
-  _strategy: Required<Strategy>,
+  _strategy: Strategy,
   signal: Signal,
   current_time: number,
   wallet: Wallet,
@@ -402,56 +396,8 @@ export async function go_buy(
   });
 }
 
-export function check_roi(
-  strategy: Required<Strategy>,
-  current_price: number,
-  current_time: number,
-  trade: Trade
-): Signal {
-  const left = trade_left(trade);
-  if (left > MIN_SELL) {
-    const roi = (current_price - trade.open_rate) / trade.open_rate;
-    let roi_expected = strategy.minimal_roi;
-    if (typeof strategy.minimal_roi !== "number") {
-      const minutes = (current_time - trade.orders[0].place_at) / 60000;
-      for (const v of Object.keys(strategy.minimal_roi)
-        .map((m) => parseInt(m))
-        .sort((a, b) => a - b)) {
-        if (minutes >= v) {
-          roi_expected = strategy.minimal_roi[v];
-        } else {
-          break;
-        }
-      }
-    }
-    log.debug2("check roi for open trade", {
-      trade: trade.id,
-      left,
-      roi,
-      expected: roi_expected,
-      current_price,
-      open_rate: trade.open_rate,
-    });
-    if (roi >= (roi_expected as number)) {
-      return {
-        amount: left,
-        price: current_price,
-        tag: "roi",
-      };
-    }
-    if (roi < strategy.stoploss) {
-      return {
-        amount: left,
-        price: current_price,
-        tag: "stoploss",
-      };
-    }
-  }
-  return {};
-}
-
 export async function go_sell(
-  _strategy: Required<Strategy>,
+  _strategy: Strategy,
   signal: Signal,
   current_time: number,
   wallet: Wallet,

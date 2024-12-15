@@ -1,7 +1,7 @@
-import { list } from "../common/persistent.ts";
+import { list } from "../modules/persistent.ts";
 import { Trade } from "../common/strategy.ts";
-import * as persistent from "../common/persistent.ts";
-import { parse } from "../common/args.ts";
+import * as persistent from "../modules/persistent.ts";
+import { parse } from "../modules/args.ts";
 
 if (import.meta.main) {
   const robot = Deno.args[0];

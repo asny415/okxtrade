@@ -1,4 +1,4 @@
-import { args } from "../common/args.ts";
+import { args } from "../modules/args.ts";
 import { getLog } from "../common/func.ts";
 const log = getLog("telegram");
 export async function notify(msg: string) {

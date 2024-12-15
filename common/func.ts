@@ -1,14 +1,8 @@
 import { Logger } from "jsr:@deno-library/logger";
 import { ParseArgsParam } from "./type.ts";
-import { args } from "./args.ts";
+import { args } from "../modules/args.ts";
 import * as path from "jsr:@std/path";
-import {
-  DataFrame,
-  DataFrameState,
-  Strategy,
-  Trade,
-  OrderSide,
-} from "./strategy.ts";
+import { DataFrame, DataFrameState, Trade, OrderSide } from "./strategy.ts";
 import { get } from "../api/okx.ts";
 
 export function getLog(_name: string) {
@@ -46,29 +40,6 @@ export function mergeOpts(a: ParseArgsParam, b: ParseArgsParam) {
 export async function load_json(filePath: string) {
   const jsonText = await Deno.readTextFile(filePath);
   return JSON.parse(jsonText);
-}
-
-export async function load_stragegy(): Promise<Required<Strategy>> {
-  const strategy_path = Deno.realPathSync(
-    path.join(args.basedir, "strategy", `${args.s}.ts`)
-  );
-  const module_path = path.relative(
-    path.dirname(path.fromFileUrl(import.meta.url)),
-    strategy_path
-  );
-  const _strategy = await import(`./${module_path}`);
-  const default_strategy: Strategy = {
-    name: "helloworld",
-    timeframes: [
-      {
-        timeframe: "5m",
-        depth: 1,
-      },
-    ],
-    minimal_roi: 0.01, // 默认超过1%利润卖出
-    stoploss: -1, // 默认不设置止损线
-  };
-  return Object.assign(default_strategy, _strategy.strategy);
 }
 
 export function okx2df(arr: string[]): DataFrame {

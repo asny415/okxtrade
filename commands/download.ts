@@ -2,7 +2,7 @@ import * as path from "jsr:@std/path";
 import { ensureDir } from "jsr:@std/fs/ensure-dir";
 import { getLog, load_candles } from "../common/func.ts";
 import { Docable, ParseArgsParam } from "../common/type.ts";
-import { args } from "../common/args.ts";
+import { args } from "../modules/args.ts";
 
 const log = getLog("download");
 export const DOC = "download historical data for backtesting";

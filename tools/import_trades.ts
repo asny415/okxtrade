@@ -1,6 +1,6 @@
 import { Trade } from "../common/strategy.ts";
-import * as persistent from "../common/persistent.ts";
-import { parse } from "../common/args.ts";
+import * as persistent from "../modules/persistent.ts";
+import { parse } from "../modules/args.ts";
 import { load_json } from "../common/func.ts";
 
 if (import.meta.main) {

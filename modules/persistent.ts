@@ -1,8 +1,8 @@
 import * as path from "jsr:@std/path";
-import { DataFrame, Trade } from "./strategy.ts";
+import { DataFrame, Trade } from "../common/strategy.ts";
 import { args } from "./args.ts";
 import { ensureDir } from "jsr:@std/fs@1.0.5/ensure-dir";
-import { getLog } from "./func.ts";
+import { getLog } from "../common/func.ts";
 
 export let db: Deno.Kv;
 const log = getLog("persistent");

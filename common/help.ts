@@ -1,4 +1,4 @@
-import { common_options } from "./args.ts";
+import { common_options } from "../modules/args.ts";
 import { Command, Docable } from "./type.ts";
 
 function help_global(commands: Record<string, Command>) {
