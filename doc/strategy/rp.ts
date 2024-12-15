@@ -11,7 +11,7 @@ import { trade_left } from "../../common/func.ts";
 interface MySignal {
   ma5: number;
   ma20: number;
-  mad3: number;
+  mad7: number;
 }
 
 export const strategy: Strategy = {
@@ -55,12 +55,12 @@ export const strategy: Strategy = {
     const lastma5 = dfs[0].slice(1, 6).reduce((r, i) => r + i.c, 0) / 5;
     const ma20 = dfs[0].slice(0, 20).reduce((r, i) => r + i.c, 0) / 20;
     const lastma20 = dfs[0].slice(1, 21).reduce((r, i) => r + i.c, 0) / 20;
-    const mad3 = dfs[1].slice(0, 3).reduce((r, i) => r + i.c, 0) / 3;
-    const base_signal = { ma5, ma20, mad3 };
+    const mad7 = dfs[1].slice(0, 7).reduce((r, i) => r + i.c, 0) / 7;
+    const base_signal = { ma5, ma20, mad7 };
     const isBRP = ma5 > ma20 && lastma5 < lastma20;
     if (!isBRP) return base_signal;
     //小于3日均价再购买
-    if (current_price > mad3) return base_signal;
+    if (current_price > mad7) return base_signal;
     const MIN_BUY = 100;
     if (wallet.balance < MIN_BUY) return base_signal;
 
