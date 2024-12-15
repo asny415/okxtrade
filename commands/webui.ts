@@ -58,7 +58,7 @@ async function handleRequest(request: Request): Promise<Response> {
     const tfs: Record<string, DataFrame[]> = {};
     let now = 0;
     for (const tf of strategy.timeframes) {
-      const prefix = ["signal", robot, tf];
+      const prefix = ["signal", robot, tf.timeframe];
       const entries = list({ prefix });
       for await (const entry of entries) {
         const ts = parseInt(entry.key.slice(-1)[0].toString());
