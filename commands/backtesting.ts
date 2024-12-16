@@ -36,8 +36,8 @@ export const options: ParseArgsParam & Docable = {
   doc: {
     timerange: "the range of data to be retrieved",
     pair: "the currency pairs to be retrieved, separated by commas",
-    timeframes:
-      "the time intervals for the candlestick charts, separated by commas",
+    strategy: "the strategy to be used",
+    wallet: "the initial amount of the simulated wallet",
   },
 };
 
