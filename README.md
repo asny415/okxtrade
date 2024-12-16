@@ -49,7 +49,7 @@ deno run --allow-write --unstable-kv --allow-read --allow-net main.ts backtestin
 >
 >TG_CHATID=[Telegram通知发往何处]
 >
->HEALTH_PING=[一个好用的心跳网站用于检测你的程序是否存活](https://healthchecks.i)
+>HEALTH_PING=[一个好用的心跳网站用于检测你的程序是否存活](https://healthchecks.io)
 
 如果你对一切充满信心，可以开始你的量化之旅了，建议一开始使用小资金量测试.
 
