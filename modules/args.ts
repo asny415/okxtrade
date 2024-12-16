@@ -27,7 +27,7 @@ export async function parse(cmd: string, opts: ParseArgsParam) {
   if (args.webui && !args.help) {
     webui();
   }
-  if (args.strategy) {
+  if (args.strategy && !args.help) {
     await load_stragegy();
   }
   if (!args.help && args.cmd != "download") {

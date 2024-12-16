@@ -5,7 +5,7 @@ import {
   load_dataframes,
   trade_left,
 } from "../common/func.ts";
-import { ParseArgsParam } from "../common/type.ts";
+import { Docable, ParseArgsParam } from "../common/type.ts";
 import { args } from "../modules/args.ts";
 import {
   DataFrame,
@@ -24,7 +24,7 @@ import { check_roi, strategy } from "../modules/strategy.ts";
 const log = getLog("backtesting");
 export const DOC =
   "perform a regression test on a strategy using historical data.";
-export const options: ParseArgsParam = {
+export const options: ParseArgsParam & Docable = {
   string: ["timerange", "pair", "strategy", "wallet"],
   default: {
     pair: "TON-USDT",
@@ -33,6 +33,12 @@ export const options: ParseArgsParam = {
     wallet: "10000",
   },
   alias: { r: "timerange", p: "pair", s: "strategy", w: "wallet" },
+  doc: {
+    timerange: "the range of data to be retrieved",
+    pair: "the currency pairs to be retrieved, separated by commas",
+    timeframes:
+      "the time intervals for the candlestick charts, separated by commas",
+  },
 };
 
 export async function run() {
