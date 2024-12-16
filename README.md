@@ -2,7 +2,8 @@
 
 **此软件仅用于演示目的，投资有风险，请谨慎使用。**
 
-一个简单的量化交易软件
+[![一个简单的基于Deno的量化交易软件](https://img.youtube.com/vi/-03dBL68gwc/0.jpg)](https://www.youtube.com/watch?v=-03dBL68gwc)
+
 
 ## 如何开始
 
