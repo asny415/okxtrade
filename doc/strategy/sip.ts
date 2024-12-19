@@ -28,6 +28,8 @@ export const strategy: Strategy = {
       //间隔不到12小时
       return {};
     }
+    //钱太少不值当买
+    if (wallet.balance < 100) return {};
     const open_trades = trades.filter((t) => t.is_open);
     const total_value =
       wallet.balance +
