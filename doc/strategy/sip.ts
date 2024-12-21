@@ -3,6 +3,7 @@ import {
   Wallet,
   Trade,
   DataFrame,
+  Order,
   Signal,
 } from "../../common/strategy.ts";
 import { trade_left } from "../../common/func.ts";
@@ -30,6 +31,20 @@ export const strategy: Strategy = {
     }
     //钱太少不值当买
     if (wallet.balance < 100) return {};
+
+    //距离上一次卖出至少间隔半个小时或者价格低于1%
+    const last_sell = trades
+      .reduce((r: Order[], t) => [...r, ...t.orders], [])
+      .filter((o) => o.filled > 0)
+      .sort((a, b) => b.place_at - a.place_at)[0];
+    if (
+      last_sell &&
+      current_time - last_sell.place_at < 30 * 60 * 1000 &&
+      current_price * 1.01 > last_sell.average
+    ) {
+      return {};
+    }
+
     const open_trades = trades.filter((t) => t.is_open);
     const total_value =
       wallet.balance +
