@@ -75,7 +75,7 @@ export const strategy: Strategy = {
     const total_value =
       wallet.balance +
       open_trades.reduce((r, t) => (r += trade_left(t) * t.open_rate), 0);
-    const split_total = 3;
+    const split_total = 6; //总数分成6份
     const money = Math.min(wallet.balance, total_value / split_total); //最多购买1份
     return {
       price: current_price,
