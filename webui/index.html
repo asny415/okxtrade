@@ -42,7 +42,7 @@
             timeScale: {
                 // 显示具体时间
                 timeVisible: true,
-            }
+            },
         });
         window.addEventListener('resize', () => {
             chart.resize(window.innerWidth, window.innerHeight);
@@ -54,6 +54,11 @@
             borderUpColor: '#26a69a',
             wickDownColor: '#ef5350',
             wickUpColor: '#26a69a',
+            priceFormat: {
+                type: 'price',
+                precision: 3, // 设置小数点后3位
+                minMove: 0.001, // 最小价格变动单位，与精度对应
+            }
         });
         candleSeries.setData([]);
         const hisSeries = chart.addHistogramSeries({
